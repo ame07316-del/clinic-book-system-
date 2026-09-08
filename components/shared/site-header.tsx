@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   MoreVertical,
   Settings2,
+  ShieldCheck,
   Sparkles,
   Stethoscope,
 } from "lucide-react";
@@ -30,6 +31,7 @@ const NAV = [
   { href: "/", label: "بوابة المريض", icon: CalendarPlus },
   { href: "/reception", label: "الاستقبال", icon: LayoutDashboard },
   { href: "/doctor", label: "الطبيب", icon: Stethoscope },
+  { href: "/admin", label: "الأدمن", icon: ShieldCheck },
 ];
 
 export function SiteHeader({ actions }: { actions?: React.ReactNode }) {

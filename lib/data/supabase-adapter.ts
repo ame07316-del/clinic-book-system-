@@ -3,25 +3,26 @@ import { emitChange } from "@/lib/data/bus";
 import { buildSeedBundle } from "@/lib/data/seed";
 import type {
   Appointment,
+  AppointmentFullPatch,
   AppointmentRow,
   Doctor,
+  DoctorPatch,
   DoctorRow,
+  DoctorWithProfileInput,
   MedicalRecord,
   NewAppointmentInput,
   NewScheduleBlockInput,
-  PaymentMethod,
-  PaymentStatus,
-  AppointmentStatus,
   Profile,
+  ProfilePatch,
   RealtimeTable,
   ScheduleBlock,
   SeedCounts,
 } from "@/lib/types";
 
 /* ------------------------------------------------------------------ */
-/*  SupabaseAdapter — production data source backed by supabase-js.    */
-/*  Uses PostgREST joins for doctors/appointments and Postgres         */
-/*  Changes (Realtime) to broadcast table events to the UI bus.        */
+/*  SupabaseAdapter — مصدر البيانات الإنتاجي عبر supabase-js.          */
+/*  يستخدم PostgREST للقراءة والكتابة و Postgres Changes (Realtime)    */
+/*  لبث أحداث الجداول إلى ناقل الواجهة.                                */
 /* ------------------------------------------------------------------ */
 
 const APPOINTMENT_SELECT =
@@ -59,6 +60,11 @@ export class SupabaseAdapter {
         "postgres_changes",
         { event: "*", schema: "public", table: "schedule_blocks" },
         () => emitChange("schedule_blocks"),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "app_settings" },
+        () => emitChange("settings"),
       )
       .subscribe();
     return () => {
@@ -139,7 +145,7 @@ export class SupabaseAdapter {
     return (data ?? []) as unknown as ScheduleBlock[];
   }
 
-  /* ---------------- mutations ---------------- */
+  /* ---------------- عمليات المرضى والمواعيد ---------------- */
 
   async createPatient(input: { full_name: string; phone?: string | null }): Promise<Profile> {
     const phone = input.phone?.trim() || null;
@@ -183,16 +189,7 @@ export class SupabaseAdapter {
     return { ...r, patient: r.patient ?? null, doctor: r.doctor ?? null };
   }
 
-  async updateAppointment(
-    id: string,
-    patch: Partial<{
-      status: AppointmentStatus;
-      payment_status: PaymentStatus;
-      payment_method: PaymentMethod;
-      time_slot: string;
-      reason: string;
-    }>,
-  ): Promise<Appointment> {
+  async updateAppointment(id: string, patch: AppointmentFullPatch): Promise<Appointment> {
     const body: Record<string, unknown> = { ...patch };
     if (patch.payment_status === "paid") body.paid_at = new Date().toISOString();
     const { data, error } = await this.sb
@@ -206,6 +203,16 @@ export class SupabaseAdapter {
     const r = data as unknown as Appointment;
     return { ...r, patient: r.patient ?? null, doctor: r.doctor ?? null };
   }
+
+  async deleteAppointment(id: string): Promise<void> {
+    await this.sb.from("medical_records").delete().eq("appointment_id", id);
+    const { error } = await this.sb.from("appointments").delete().eq("id", id);
+    if (error) throw error;
+    emitChange("appointments");
+    emitChange("medical_records");
+  }
+
+  /* ---------------- السجلات الطبية ---------------- */
 
   async upsertMedicalRecord(record: {
     appointment_id: string;
@@ -225,6 +232,14 @@ export class SupabaseAdapter {
     const r = data as unknown as MedicalRecord;
     return { ...r, prescription: Array.isArray(r.prescription) ? r.prescription : [] };
   }
+
+  async deleteMedicalRecord(id: string): Promise<void> {
+    const { error } = await this.sb.from("medical_records").delete().eq("id", id);
+    if (error) throw error;
+    emitChange("medical_records");
+  }
+
+  /* ---------------- حظر المواعيد ---------------- */
 
   async createScheduleBlock(input: NewScheduleBlockInput): Promise<ScheduleBlock> {
     const { data, error } = await this.sb
@@ -261,12 +276,143 @@ export class SupabaseAdapter {
     emitChange("schedule_blocks");
   }
 
-  /* ---------------- demo lifecycle ---------------- */
+  /* ---------------- أدوات الأدمن (صلاحيات كاملة) ---------------- */
+
+  async createDoctorWithProfile(input: DoctorWithProfileInput): Promise<Doctor> {
+    const { data: profile, error: profileError } = await this.sb
+      .from("profiles")
+      .insert({
+        full_name: input.full_name.trim(),
+        role: "doctor",
+        phone: input.phone?.trim() || null,
+      })
+      .select("*")
+      .single();
+    if (profileError) throw profileError;
+    const prof = profile as unknown as Profile;
+    const { data, error } = await this.sb
+      .from("doctors")
+      .insert({
+        user_id: prof.id,
+        specialty: input.specialty.trim(),
+        consultation_fee: input.consultation_fee,
+      })
+      .select("*, profile:profiles(*)")
+      .single();
+    if (error) throw error;
+    emitChange("doctors");
+    const r = data as unknown as DoctorRow & { profile: Profile | null };
+    return { ...r, profile: r.profile ?? null };
+  }
+
+  async updateDoctor(doctorId: string, patch: DoctorPatch): Promise<void> {
+    const doctorBody: Record<string, unknown> = {};
+    if (patch.specialty !== undefined) doctorBody.specialty = patch.specialty;
+    if (patch.consultation_fee !== undefined) doctorBody.consultation_fee = patch.consultation_fee;
+    if (Object.keys(doctorBody).length > 0) {
+      const { error } = await this.sb.from("doctors").update(doctorBody).eq("id", doctorId);
+      if (error) throw error;
+    }
+    if (patch.full_name !== undefined || patch.phone !== undefined) {
+      const { data: row } = await this.sb
+        .from("doctors")
+        .select("user_id")
+        .eq("id", doctorId)
+        .single();
+      const userId = (row as { user_id: string | null } | null)?.user_id;
+      if (userId) {
+        const profileBody: Record<string, unknown> = {};
+        if (patch.full_name !== undefined) profileBody.full_name = patch.full_name.trim();
+        if (patch.phone !== undefined) profileBody.phone = patch.phone?.trim() || null;
+        const { error } = await this.sb.from("profiles").update(profileBody).eq("id", userId);
+        if (error) throw error;
+      }
+    }
+    emitChange("doctors");
+    emitChange("patients");
+    emitChange("appointments");
+  }
+
+  async deleteDoctor(doctorId: string): Promise<void> {
+    const { data: apptIds } = await this.sb
+      .from("appointments")
+      .select("id")
+      .eq("doctor_id", doctorId);
+    const ids = ((apptIds ?? []) as Array<{ id: string }>).map((x) => x.id);
+    if (ids.length > 0) {
+      await this.sb.from("medical_records").delete().in("appointment_id", ids);
+    }
+    await this.sb.from("appointments").delete().eq("doctor_id", doctorId);
+    await this.sb.from("schedule_blocks").delete().eq("doctor_id", doctorId);
+    const { data: row } = await this.sb
+      .from("doctors")
+      .select("user_id")
+      .eq("id", doctorId)
+      .single();
+    const userId = (row as { user_id: string | null } | null)?.user_id;
+    const { error } = await this.sb.from("doctors").delete().eq("id", doctorId);
+    if (error) throw error;
+    if (userId) await this.sb.from("profiles").delete().eq("id", userId);
+    emitChange("doctors");
+    emitChange("appointments");
+    emitChange("medical_records");
+    emitChange("schedule_blocks");
+    emitChange("patients");
+  }
+
+  async updateProfile(profileId: string, patch: ProfilePatch): Promise<void> {
+    const body: Record<string, unknown> = {};
+    if (patch.full_name !== undefined) body.full_name = patch.full_name.trim();
+    if (patch.phone !== undefined) body.phone = patch.phone?.trim() || null;
+    if (Object.keys(body).length === 0) return;
+    const { error } = await this.sb.from("profiles").update(body).eq("id", profileId);
+    if (error) throw error;
+    emitChange("patients");
+    emitChange("appointments");
+  }
+
+  async deletePatient(patientId: string): Promise<void> {
+    const { data: apptIds } = await this.sb
+      .from("appointments")
+      .select("id")
+      .eq("patient_id", patientId);
+    const ids = ((apptIds ?? []) as Array<{ id: string }>).map((x) => x.id);
+    if (ids.length > 0) {
+      await this.sb.from("medical_records").delete().in("appointment_id", ids);
+    }
+    await this.sb.from("appointments").delete().eq("patient_id", patientId);
+    const { error } = await this.sb.from("profiles").delete().eq("id", patientId);
+    if (error) throw error;
+    emitChange("patients");
+    emitChange("appointments");
+    emitChange("medical_records");
+  }
+
+  async getSettings(): Promise<Record<string, unknown>> {
+    const { data, error } = await this.sb.from("app_settings").select("key, value");
+    if (error) throw error;
+    const out: Record<string, unknown> = {};
+    for (const row of (data ?? []) as Array<{ key: string; value: unknown }>) {
+      out[row.key] = row.value;
+    }
+    return out;
+  }
+
+  async saveSetting(key: string, value: unknown): Promise<void> {
+    const { error } = await this.sb
+      .from("app_settings")
+      .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: "key" });
+    if (error) throw error;
+    emitChange("settings");
+  }
+
+  /* ---------------- دورة حياة العرض التجريبي ---------------- */
 
   async seedDemoData(): Promise<SeedCounts> {
     const bundle = buildSeedBundleSupabase();
 
-    // Clear existing demo tables (FK-safe order) so reseeding is idempotent.
+    // مسح الجداول التجريبية (بترتيب آمن للمفاتيح الأجنبية) حتى يكون
+    // إعادة التعبئة idempotent.
     await this.sb.from("medical_records").delete().neq("id", "00000000-0000-0000-0000-000000000000");
     await this.sb.from("schedule_blocks").delete().neq("id", "00000000-0000-0000-0000-000000000000");
     await this.sb.from("appointments").delete().neq("id", "00000000-0000-0000-0000-000000000000");

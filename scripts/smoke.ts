@@ -77,6 +77,7 @@ const appts = await ls.getAppointments({ date: today });
 check("today appointments exist", appts.length >= 15);
 check("joined patient+doctor", appts.every((a) => a.patient && a.doctor?.profile));
 const cardio = doctors.find((d) => d.specialty === "القلب والأوعية الدموية")!;
+const doctors2 = doctors;
 const cardioAppts = await ls.getAppointments({ date: today, doctorId: cardio.id });
 check("filter by doctor", cardioAppts.length === 8);
 
@@ -136,6 +137,70 @@ check("medical record upsert (not duplicate)", rec2.id === rec.id && rec2.diagno
 // patient history source
 const records = await ls.getMedicalRecords();
 check("records present", records.length >= 7);
+
+// — أدوات الأدمن (صلاحيات كاملة) —
+const newDoc = await ls.createDoctorWithProfile({
+  full_name: "د. أدمن جديد",
+  phone: "+20 100 000 0001",
+  specialty: "النساء والتوليد",
+  consultation_fee: 450,
+});
+check("createDoctorWithProfile joins profile", Boolean(newDoc.profile?.full_name) && newDoc.specialty === "النساء والتوليد");
+await ls.updateDoctor(newDoc.id, {
+  full_name: "د. أدمن معدّل",
+  phone: "+20 100 000 0002",
+  specialty: "طب الأسنان",
+  consultation_fee: 250,
+});
+const docsAfterUpdate = await ls.getDoctors();
+const updatedDoc = docsAfterUpdate.find((d) => d.id === newDoc.id)!;
+check("updateDoctor changes identity+specialty+fee", updatedDoc.profile?.full_name === "د. أدمن معدّل" && updatedDoc.specialty === "طب الأسنان" && updatedDoc.consultation_fee === 250);
+
+const adminAppt = await ls.createAppointment({
+  patient_id: p.id,
+  doctor_id: newDoc.id,
+  appointment_date: today,
+  time_slot: "10:30",
+  status: "scheduled",
+});
+const fullPatched = await ls.updateAppointment(adminAppt.id, {
+  doctor_id: doctors2[0]!.id,
+  appointment_date: addDays(today, 3),
+  time_slot: "15:30",
+  status: "completed",
+  payment_status: "paid",
+});
+check("full appointment patch (doctor/date/slot/status/payment)", fullPatched.doctor_id === doctors2[0]!.id && fullPatched.appointment_date === addDays(today, 3) && fullPatched.time_slot === "15:30" && fullPatched.status === "completed" && fullPatched.payment_status === "paid");
+
+await ls.upsertMedicalRecord({ appointment_id: adminAppt.id, diagnosis: "سجل للحذف", prescription: [] });
+const recBefore = (await ls.getMedicalRecords()).filter((r) => r.appointment_id === adminAppt.id).length;
+await ls.deleteAppointment(adminAppt.id);
+const recAfter = (await ls.getMedicalRecords()).filter((r) => r.appointment_id === adminAppt.id).length;
+check("deleteAppointment cascades records", recBefore === 1 && recAfter === 0);
+
+// هوية مريض
+await ls.updateProfile(p.id, { full_name: "مريض تجربة — هوية جديدة", phone: "+20 199 999 1111" });
+const pts = await ls.getPatients();
+check("updateProfile changes identity", pts.find((x) => x.id === p.id)?.full_name === "مريض تجربة — هوية جديدة");
+
+// حذف طبيب بكل شيء متعلق به
+await ls.deleteDoctor(newDoc.id);
+const docsFinal = await ls.getDoctors();
+const apptsFinal = await ls.getAppointments({ doctorId: newDoc.id });
+check("deleteDoctor removes doctor", docsFinal.every((d) => d.id !== newDoc.id));
+check("deleteDoctor cascades appointments", apptsFinal.length === 0);
+
+// إعدادات / هوية العيادة
+await ls.saveSetting("branding", { shortName: "عيادة تجريبية", fullName: "عيادة تجريبية — المركز الطبي" });
+const settings = await ls.getSettings();
+check("save/get settings roundtrip", (settings["branding"] as { shortName: string }).shortName === "عيادة تجريبية");
+
+// حذف مريض بالكامل
+const pAppts = await ls.getAppointments({ patientId: p.id });
+await ls.deletePatient(p.id);
+const pApptsAfter = await ls.getAppointments({ patientId: p.id });
+const pGone = (await ls.getPatients()).every((x) => x.id !== p.id);
+check("deletePatient cascades (" + pAppts.length + " appts)", pApptsAfter.length === 0 && pGone);
 
 // reset
 await ls.resetAll();

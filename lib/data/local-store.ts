@@ -2,29 +2,29 @@ import { emitChange } from "@/lib/data/bus";
 import { buildSeedBundle, type SeedBundle } from "@/lib/data/seed";
 import type {
   Appointment,
+  AppointmentFullPatch,
   AppointmentRow,
   Doctor,
+  DoctorPatch,
   DoctorRow,
+  DoctorWithProfileInput,
   MedicalRecord,
   NewAppointmentInput,
   NewScheduleBlockInput,
-  PaymentMethod,
-  PaymentStatus,
-  AppointmentStatus,
   Profile,
+  ProfilePatch,
   ScheduleBlock,
   SeedCounts,
 } from "@/lib/types";
 import { sleep, uid } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
-/*  LocalStore — a browser-local backend used when the Supabase        */
-/*  project is unreachable or its schema hasn't been provisioned yet.  */
-/*  Mirrors the Supabase schema 1:1, persists to localStorage and      */
-/*  simulates realtime across tabs via the `storage` event.            */
+/*  LocalStore — قاعدة بيانات المتصفح المستخدمة عندما يكون Supabase    */
+/*  غير متاح أو السكيما غير منشأة. مطابقة للسكيما 1:1، مع حفظ في       */
+/*  localStorage ومحاكاة Realtime عبر حدث storage بين التابات.         */
 /* ------------------------------------------------------------------ */
 
-const STORAGE_KEY = "medicore.demo.db.v1";
+const STORAGE_KEY = "medicore.demo.db.v2";
 
 interface DemoDB {
   profiles: Profile[];
@@ -32,10 +32,18 @@ interface DemoDB {
   appointments: AppointmentRow[];
   medical_records: MedicalRecord[];
   schedule_blocks: ScheduleBlock[];
+  app_settings: Record<string, unknown>;
 }
 
 function emptyDB(): DemoDB {
-  return { profiles: [], doctors: [], appointments: [], medical_records: [], schedule_blocks: [] };
+  return {
+    profiles: [],
+    doctors: [],
+    appointments: [],
+    medical_records: [],
+    schedule_blocks: [],
+    app_settings: {},
+  };
 }
 
 function loadDB(): DemoDB {
@@ -43,13 +51,14 @@ function loadDB(): DemoDB {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return emptyDB();
-    const parsed = JSON.parse(raw) as DemoDB;
+    const parsed = JSON.parse(raw) as Partial<DemoDB>;
     return {
       profiles: parsed.profiles ?? [],
       doctors: parsed.doctors ?? [],
       appointments: parsed.appointments ?? [],
       medical_records: parsed.medical_records ?? [],
       schedule_blocks: parsed.schedule_blocks ?? [],
+      app_settings: parsed.app_settings ?? {},
     };
   } catch {
     return emptyDB();
@@ -65,7 +74,7 @@ export class LocalStore {
   async init(): Promise<void> {
     if (this.ready) return;
     this.db = loadDB();
-    // Cross-tab realtime: another tab wrote to localStorage.
+    // Realtime بين التابات: تاب آخر كتب في localStorage.
     this.storageHandler = () => {
       this.db = loadDB();
       emitChange("appointments");
@@ -73,6 +82,7 @@ export class LocalStore {
       emitChange("patients");
       emitChange("medical_records");
       emitChange("schedule_blocks");
+      emitChange("settings");
     };
     window.addEventListener("storage", this.storageHandler);
     this.ready = true;
@@ -87,7 +97,7 @@ export class LocalStore {
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(this.db));
     } catch {
-      /* storage full / private mode — demo keeps working in-memory */
+      /* الذاكرة ممتلئة / وضع خاص — العرض التجريبي يستمر في الذاكرة */
     }
   }
 
@@ -120,7 +130,7 @@ export class LocalStore {
     await this.latency();
     return this.db.profiles
       .filter((p) => p.role === "patient")
-      .sort((a, b) => a.full_name.localeCompare(b.full_name));
+      .sort((a, b) => a.full_name.localeCompare(b.full_name, "ar"));
   }
 
   async getAppointments(filter?: {
@@ -147,15 +157,20 @@ export class LocalStore {
     return [...this.db.medical_records];
   }
 
-  async getScheduleBlocks(filter?: { date?: string; doctorId?: string }): Promise<ScheduleBlock[]> {
+  async getScheduleBlocks(filter?: {
+    date?: string;
+    doctorId?: string;
+  }): Promise<ScheduleBlock[]> {
     await this.latency();
     let rows = [...this.db.schedule_blocks];
     if (filter?.date) rows = rows.filter((b) => b.block_date === filter.date);
     if (filter?.doctorId) rows = rows.filter((b) => b.doctor_id === filter.doctorId);
-    return rows.sort((a, b) => a.start_time.localeCompare(b.start_time));
+    return rows.sort(
+      (a, b) => a.block_date.localeCompare(b.block_date) || a.start_time.localeCompare(b.start_time),
+    );
   }
 
-  /* ---------------- mutations ---------------- */
+  /* ---------------- عمليات المرضى والمواعيد ---------------- */
 
   async createPatient(input: { full_name: string; phone?: string | null }): Promise<Profile> {
     await this.latency();
@@ -200,19 +215,10 @@ export class LocalStore {
     return this.appointmentView(row);
   }
 
-  async updateAppointment(
-    id: string,
-    patch: Partial<{
-      status: AppointmentStatus;
-      payment_status: PaymentStatus;
-      payment_method: PaymentMethod;
-      time_slot: string;
-      reason: string;
-    }>,
-  ): Promise<Appointment> {
+  async updateAppointment(id: string, patch: AppointmentFullPatch): Promise<Appointment> {
     await this.latency();
     const row = this.db.appointments.find((a) => a.id === id);
-    if (!row) throw new Error("Appointment not found");
+    if (!row) throw new Error("الموعد غير موجود");
     Object.assign(row, patch);
     if (patch.payment_status === "paid" && !row.paid_at) {
       row.paid_at = new Date().toISOString();
@@ -222,13 +228,26 @@ export class LocalStore {
     return this.appointmentView(row);
   }
 
+  async deleteAppointment(id: string): Promise<void> {
+    await this.latency();
+    this.db.appointments = this.db.appointments.filter((a) => a.id !== id);
+    this.db.medical_records = this.db.medical_records.filter((r) => r.appointment_id !== id);
+    this.persist();
+    emitChange("appointments");
+    emitChange("medical_records");
+  }
+
+  /* ---------------- السجلات الطبية ---------------- */
+
   async upsertMedicalRecord(record: {
     appointment_id: string;
     diagnosis: string;
     prescription: MedicalRecord["prescription"];
   }): Promise<MedicalRecord> {
     await this.latency();
-    const existing = this.db.medical_records.find((r) => r.appointment_id === record.appointment_id);
+    const existing = this.db.medical_records.find(
+      (r) => r.appointment_id === record.appointment_id,
+    );
     if (existing) {
       existing.diagnosis = record.diagnosis;
       existing.prescription = record.prescription;
@@ -250,6 +269,15 @@ export class LocalStore {
     emitChange("medical_records");
     return created;
   }
+
+  async deleteMedicalRecord(id: string): Promise<void> {
+    await this.latency();
+    this.db.medical_records = this.db.medical_records.filter((r) => r.id !== id);
+    this.persist();
+    emitChange("medical_records");
+  }
+
+  /* ---------------- حظر المواعيد ---------------- */
 
   async createScheduleBlock(input: NewScheduleBlockInput): Promise<ScheduleBlock> {
     await this.latency();
@@ -288,13 +316,116 @@ export class LocalStore {
     emitChange("schedule_blocks");
   }
 
-  /* ---------------- demo lifecycle ---------------- */
+  /* ---------------- أدوات الأدمن (صلاحيات كاملة) ---------------- */
+
+  async createDoctorWithProfile(input: DoctorWithProfileInput): Promise<Doctor> {
+    await this.latency();
+    const profile: Profile = {
+      id: uid(),
+      full_name: input.full_name.trim(),
+      role: "doctor",
+      phone: input.phone?.trim() || null,
+      created_at: new Date().toISOString(),
+    };
+    const row: DoctorRow = {
+      id: uid(),
+      user_id: profile.id,
+      specialty: input.specialty.trim(),
+      consultation_fee: input.consultation_fee,
+    };
+    this.db.profiles.push(profile);
+    this.db.doctors.push(row);
+    this.persist();
+    emitChange("doctors");
+    return this.doctorView(row);
+  }
+
+  async updateDoctor(doctorId: string, patch: DoctorPatch): Promise<void> {
+    await this.latency();
+    const row = this.db.doctors.find((d) => d.id === doctorId);
+    if (!row) throw new Error("الطبيب غير موجود");
+    if (patch.specialty !== undefined) row.specialty = patch.specialty;
+    if (patch.consultation_fee !== undefined) row.consultation_fee = patch.consultation_fee;
+    const profile = this.db.profiles.find((p) => p.id === row.user_id);
+    if (profile) {
+      if (patch.full_name !== undefined) profile.full_name = patch.full_name.trim();
+      if (patch.phone !== undefined) profile.phone = patch.phone?.trim() || null;
+    }
+    this.persist();
+    emitChange("doctors");
+    emitChange("patients");
+    emitChange("appointments");
+  }
+
+  async deleteDoctor(doctorId: string): Promise<void> {
+    await this.latency();
+    const row = this.db.doctors.find((d) => d.id === doctorId);
+    const removedIds = new Set(
+      this.db.appointments.filter((a) => a.doctor_id === doctorId).map((a) => a.id),
+    );
+    this.db.appointments = this.db.appointments.filter((a) => a.doctor_id !== doctorId);
+    this.db.medical_records = this.db.medical_records.filter(
+      (r) => !removedIds.has(r.appointment_id),
+    );
+    this.db.schedule_blocks = this.db.schedule_blocks.filter((b) => b.doctor_id !== doctorId);
+    this.db.doctors = this.db.doctors.filter((d) => d.id !== doctorId);
+    if (row?.user_id) {
+      this.db.profiles = this.db.profiles.filter((p) => p.id !== row.user_id);
+    }
+    this.persist();
+    emitChange("doctors");
+    emitChange("appointments");
+    emitChange("medical_records");
+    emitChange("schedule_blocks");
+    emitChange("patients");
+  }
+
+  async updateProfile(profileId: string, patch: ProfilePatch): Promise<void> {
+    await this.latency();
+    const profile = this.db.profiles.find((p) => p.id === profileId);
+    if (!profile) throw new Error("الملف غير موجود");
+    if (patch.full_name !== undefined) profile.full_name = patch.full_name.trim();
+    if (patch.phone !== undefined) profile.phone = patch.phone?.trim() || null;
+    this.persist();
+    emitChange("patients");
+    emitChange("appointments");
+  }
+
+  async deletePatient(patientId: string): Promise<void> {
+    await this.latency();
+    const removedIds = new Set(
+      this.db.appointments.filter((a) => a.patient_id === patientId).map((a) => a.id),
+    );
+    this.db.appointments = this.db.appointments.filter((a) => a.patient_id !== patientId);
+    this.db.medical_records = this.db.medical_records.filter(
+      (r) => !removedIds.has(r.appointment_id),
+    );
+    this.db.profiles = this.db.profiles.filter((p) => p.id !== patientId);
+    this.persist();
+    emitChange("patients");
+    emitChange("appointments");
+    emitChange("medical_records");
+  }
+
+  async getSettings(): Promise<Record<string, unknown>> {
+    await this.latency(80);
+    return { ...this.db.app_settings };
+  }
+
+  async saveSetting(key: string, value: unknown): Promise<void> {
+    await this.latency(80);
+    this.db.app_settings[key] = value;
+    this.persist();
+    emitChange("settings");
+  }
+
+  /* ---------------- دورة حياة العرض التجريبي ---------------- */
 
   hasSeededData(): boolean {
     return this.db.doctors.length > 0;
   }
 
-  /** First-run convenience: auto-seed when the local DB is empty. */
+  /** أول تشغيل: تعبئة تلقائية عندما تكون القاعدة المحلية فاضية. */
   async seedIfEmpty(): Promise<void> {
     if (!this.hasSeededData()) {
       await this.seedDemoData();
@@ -310,6 +441,7 @@ export class LocalStore {
       appointments: bundle.appointments,
       medical_records: bundle.medical_records,
       schedule_blocks: bundle.schedule_blocks,
+      app_settings: this.db.app_settings,
     };
     this.persist();
     emitChange("doctors");
@@ -328,7 +460,9 @@ export class LocalStore {
 
   async resetAll(): Promise<void> {
     await this.latency(120);
+    const settings = this.db.app_settings;
     this.db = emptyDB();
+    this.db.app_settings = settings;
     this.persist();
     emitChange("doctors");
     emitChange("patients");

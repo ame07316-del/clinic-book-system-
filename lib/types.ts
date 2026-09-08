@@ -138,4 +138,46 @@ export type RealtimeTable =
   | "doctors"
   | "patients"
   | "medical_records"
-  | "schedule_blocks";
+  | "schedule_blocks"
+  | "settings";
+
+/** هوية العيادة (قابلة للتعديل من داشبورد الأدمن) — تُخزن في app_settings */
+export interface Branding {
+  shortName: string;
+  fullName: string;
+  tagline: string;
+  address: string;
+  phone: string;
+  email: string;
+}
+
+/** رقعة تعديل الموعد الكاملة (أدمن) */
+export interface AppointmentFullPatch {
+  patient_id?: string;
+  doctor_id?: string;
+  appointment_date?: string;
+  time_slot?: string;
+  status?: AppointmentStatus;
+  reason?: string | null;
+  payment_status?: PaymentStatus;
+  payment_method?: PaymentMethod | null;
+}
+
+export interface DoctorWithProfileInput {
+  full_name: string;
+  phone?: string | null;
+  specialty: string;
+  consultation_fee: number;
+}
+
+export interface DoctorPatch {
+  specialty?: string;
+  consultation_fee?: number;
+  full_name?: string;
+  phone?: string | null;
+}
+
+export interface ProfilePatch {
+  full_name?: string;
+  phone?: string | null;
+}

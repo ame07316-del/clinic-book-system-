@@ -15,23 +15,24 @@ import { SupabaseAdapter } from "@/lib/data/supabase-adapter";
 import { getSupabaseClient, withTimeout } from "@/lib/supabase/client";
 import type {
   Appointment,
-  AppointmentStatus,
+  AppointmentFullPatch,
   Doctor,
+  DoctorPatch,
+  DoctorWithProfileInput,
   MedicalRecord,
   NewAppointmentInput,
   NewScheduleBlockInput,
-  PaymentMethod,
-  PaymentStatus,
   Profile,
+  ProfilePatch,
   RealtimeTable,
   ScheduleBlock,
   SeedCounts,
 } from "@/lib/types";
 
 /* ------------------------------------------------------------------ */
-/*  DataSource — the single contract every feature talks to.           */
-/*  Two implementations: SupabaseAdapter (production) and LocalStore   */
-/*  (auto-fallback demo backend with simulated realtime).              */
+/*  DataSource — العقد الموحد الذي تتكلم معه كل الميزات.               */
+/*  تنفيذان: SupabaseAdapter (إنتاجي) و LocalStore                     */
+/*  (قاعدة تجريبية احتياطية بمحاكاة Realtime).                         */
 /* ------------------------------------------------------------------ */
 
 export interface DataSource {
@@ -47,16 +48,7 @@ export interface DataSource {
   getScheduleBlocks(filter?: { date?: string; doctorId?: string }): Promise<ScheduleBlock[]>;
   createPatient(input: { full_name: string; phone?: string | null }): Promise<Profile>;
   createAppointment(input: NewAppointmentInput): Promise<Appointment>;
-  updateAppointment(
-    id: string,
-    patch: Partial<{
-      status: AppointmentStatus;
-      payment_status: PaymentStatus;
-      payment_method: PaymentMethod;
-      time_slot: string;
-      reason: string;
-    }>,
-  ): Promise<Appointment>;
+  updateAppointment(id: string, patch: AppointmentFullPatch): Promise<Appointment>;
   upsertMedicalRecord(record: {
     appointment_id: string;
     diagnosis: string;
@@ -64,6 +56,16 @@ export interface DataSource {
   }): Promise<MedicalRecord>;
   createScheduleBlock(input: NewScheduleBlockInput): Promise<ScheduleBlock>;
   deleteScheduleBlock(id: string): Promise<void>;
+  /* أدوات الأدمن (صلاحيات كاملة) */
+  deleteAppointment(id: string): Promise<void>;
+  deleteMedicalRecord(id: string): Promise<void>;
+  createDoctorWithProfile(input: DoctorWithProfileInput): Promise<Doctor>;
+  updateDoctor(doctorId: string, patch: DoctorPatch): Promise<void>;
+  deleteDoctor(doctorId: string): Promise<void>;
+  updateProfile(profileId: string, patch: ProfilePatch): Promise<void>;
+  deletePatient(patientId: string): Promise<void>;
+  getSettings(): Promise<Record<string, unknown>>;
+  saveSetting(key: string, value: unknown): Promise<void>;
   seedDemoData(): Promise<SeedCounts>;
   resetAll(): Promise<void>;
 }

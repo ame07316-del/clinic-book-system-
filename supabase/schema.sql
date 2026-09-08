@@ -83,6 +83,15 @@ create trigger medical_records_touch
   for each row execute function public.touch_updated_at();
 
 -- ---------------------------------------------------------------------------
+-- app_settings — إعدادات التطبيق (هوية العيادة) — تُدار من لوحة الأدمن
+-- ---------------------------------------------------------------------------
+create table if not exists public.app_settings (
+  key        text primary key,
+  value      jsonb not null,
+  updated_at timestamptz not null default now()
+);
+
+-- ---------------------------------------------------------------------------
 -- schedule_blocks — Dynamic Slot Creator (breaks / emergencies / overrides)
 -- ---------------------------------------------------------------------------
 create table if not exists public.schedule_blocks (
@@ -110,11 +119,12 @@ alter table public.doctors         enable row level security;
 alter table public.appointments    enable row level security;
 alter table public.medical_records enable row level security;
 alter table public.schedule_blocks enable row level security;
+alter table public.app_settings     enable row level security;
 
 do $$
 declare t text;
 begin
-  foreach t in array array['profiles','doctors','appointments','medical_records','schedule_blocks']
+  foreach t in array array['profiles','doctors','appointments','medical_records','schedule_blocks','app_settings']
   loop
     execute format('drop policy if exists "demo_full_access" on public.%I', t);
     execute format(
@@ -132,7 +142,7 @@ alter table public.medical_records replica identity full;
 do $$
 declare t text;
 begin
-  foreach t in array array['appointments','doctors','profiles','medical_records','schedule_blocks']
+  foreach t in array array['appointments','doctors','profiles','medical_records','schedule_blocks','app_settings']
   loop
     begin
       execute format('alter publication supabase_realtime add table public.%I', t);

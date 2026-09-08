@@ -1,17 +1,11 @@
-import type { Appointment, MedicalRecord, PaymentMethod } from "@/lib/types";
+import { DEFAULT_BRANDING } from "@/lib/branding";
+import type { Appointment, Branding, MedicalRecord, PaymentMethod } from "@/lib/types";
 import { formatCurrency, formatDateLong, formatTimeSlot } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
 /*  نوافذ الطباعة — الوصفة الطبية (PDF عبر الطباعة) وإيصال الدفع.      */
+/*  تقرأ هوية العيادة من الإعدادات (داشبورد الأدمن).                   */
 /* ------------------------------------------------------------------ */
-
-const CLINIC = {
-  name: "ميدي كور — المركز الطبي",
-  tagline: "عيادات متعددة التخصصات وتحاليل",
-  address: "124 شارع الصحة، المهندسين، القاهرة",
-  phone: "+20 2 3300 1000",
-  email: "care@medicore.health",
-};
 
 function baseDoc(title: string, body: string): string {
   return `<!doctype html>
@@ -58,7 +52,7 @@ function baseDoc(title: string, body: string): string {
 </html>`;
 }
 
-function header(): string {
+function header(b: Branding): string {
   return `
   <div style="display:flex; justify-content:space-between; align-items:center; padding:28px 36px 20px; border-bottom:3px solid #0d9488; background:linear-gradient(135deg,#f0fdfa,#ffffff);">
     <div style="display:flex; gap:14px; align-items:center;">
@@ -66,12 +60,12 @@ function header(): string {
         <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v12"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
       </div>
       <div>
-        <div style="font-size:20px;font-weight:800;color:#0f172a;">${CLINIC.name}</div>
-        <div style="font-size:12px;color:#64748b;">${CLINIC.tagline}</div>
+        <div style="font-size:20px;font-weight:800;color:#0f172a;">${b.fullName}</div>
+        <div style="font-size:12px;color:#64748b;">${b.tagline}</div>
       </div>
     </div>
     <div style="text-align:left;font-size:11px;color:#64748b;line-height:1.8;">
-      ${CLINIC.address}<br/>${CLINIC.phone} · ${CLINIC.email}
+      ${b.address}<br/>${b.phone} · ${b.email}
     </div>
   </div>`;
 }
@@ -93,7 +87,9 @@ function esc(s: string | null | undefined): string {
 export function printPrescription(
   appointment: Appointment,
   record: MedicalRecord | null,
+  branding: Branding = DEFAULT_BRANDING,
 ): void {
+  const CLINIC = branding;
   const doctor = appointment.doctor;
   const doctorName = doctor?.profile?.full_name ?? "الطبيب المعالج";
   const patient = appointment.patient;
@@ -114,7 +110,7 @@ export function printPrescription(
     .join("");
 
   const body = `
-  ${header()}
+  ${header(branding)}
   <div style="padding:28px 36px 8px;">
     <div style="display:flex;justify-content:space-between;align-items:flex-end;">
       <div style="font-size:22px;font-weight:800;color:#0d9488;">وصفة طبية</div>
@@ -145,7 +141,7 @@ export function printPrescription(
     </div>
     <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:56px;padding-bottom:36px;">
       <div style="font-size:11px;color:#94a3b8;line-height:1.8;">
-        هذه الوصفة مُنشأة إلكترونيًا من ${CLINIC.name}.<br/>
+        هذه الوصفة مُنشأة إلكترونيًا من ${CLINIC.fullName}.<br/>
         يُرجى التحقق من أسماء الأدوية قبل الصرف.
       </div>
       <div style="text-align:center;">
@@ -165,11 +161,11 @@ const METHOD_LABEL: Record<PaymentMethod, string> = {
   upi: "محفظة إلكترونية",
 };
 
-export function printReceipt(appointment: Appointment): void {
+export function printReceipt(appointment: Appointment, branding: Branding = DEFAULT_BRANDING): void {
   const doctor = appointment.doctor;
   const fee = doctor?.consultation_fee ?? 0;
   const body = `
-  ${header()}
+  ${header(branding)}
   <div style="padding:28px 36px 36px;">
     <div style="display:flex;justify-content:space-between;align-items:flex-end;">
       <div style="font-size:22px;font-weight:800;color:#0f172a;">إيصال دفع</div>

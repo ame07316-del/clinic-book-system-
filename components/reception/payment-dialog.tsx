@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { PaymentBadge } from "@/components/shared/status-badge";
 import { useAppData } from "@/lib/data";
+import { useBranding } from "@/lib/branding";
 import { printReceipt } from "@/lib/print";
 import type { Appointment, PaymentMethod } from "@/lib/types";
 import { formatCurrency, formatTimeSlot } from "@/lib/utils";
@@ -43,6 +44,7 @@ export function PaymentDialog({
   onOpenChange: (v: boolean) => void;
 }) {
   const { ds } = useAppData();
+  const { branding } = useBranding();
   const [method, setMethod] = useState<PaymentMethod>("card");
   const [busy, setBusy] = useState(false);
 
@@ -133,7 +135,7 @@ export function PaymentDialog({
         <DialogFooter className="gap-2">
           {paid ? (
             <>
-              <Button variant="outline" onClick={() => printReceipt(appointment)}>
+              <Button variant="outline" onClick={() => printReceipt(appointment, branding)}>
                 <Printer /> إعادة طباعة الإيصال
               </Button>
               <Button variant="outline" disabled={busy} onClick={() => void markPending()}>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AppDataProvider } from "@/lib/data";
+import { BrandingProvider } from "@/lib/branding";
 import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
@@ -24,7 +25,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap"
           rel="stylesheet"
         />
-        <AppDataProvider>{children}</AppDataProvider>
+        <AppDataProvider>
+          <BrandingProvider>{children}</BrandingProvider>
+        </AppDataProvider>
         <Toaster />
       </body>
     </html>

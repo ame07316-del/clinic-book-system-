@@ -24,6 +24,7 @@ import { PrescriptionBuilder } from "@/components/doctor/prescription-builder";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { EmptyState } from "@/components/shared/empty-state";
 import { useAppData, useMedicalRecords, useAppointments } from "@/lib/data";
+import { useBranding } from "@/lib/branding";
 import { printPrescription } from "@/lib/print";
 import type { Appointment, MedicalRecord, PrescriptionItem } from "@/lib/types";
 import { avatarHue, formatCurrency, formatDateLong, formatTimeSlot, initials } from "@/lib/utils";
@@ -42,6 +43,7 @@ export function ConsultationPanel({
   onFinished?: () => void;
 }) {
   const { ds } = useAppData();
+  const { branding } = useBranding();
   const { data: allRecords, loading: recordsLoading } = useMedicalRecords();
   const { data: patientAppointments } = useAppointments(
     selected?.patient_id ? { patientId: selected.patient_id } : undefined,
@@ -160,7 +162,7 @@ export function ConsultationPanel({
       diagnosis: diagnosis.trim(),
       prescription: items.filter((i) => i.medicine.trim()),
     };
-    printPrescription(selected, record);
+    printPrescription(selected, record, branding);
   };
 
   return (

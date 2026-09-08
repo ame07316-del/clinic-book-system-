@@ -72,6 +72,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_...
 
 ```
 profiles        (id, full_name, role[doctor|receptionist|patient], phone, created_at)
+app_settings    (key ⚡pk, value jsonb, updated_at) — هوية العيادة وغيرها
 doctors         (id, user_id ← profiles, specialty, consultation_fee, created_at)
 appointments    (id, patient_id ← profiles, doctor_id ← doctors, appointment_date,
                  time_slot, status[scheduled|waiting|in_consultation|completed|cancelled],
@@ -106,6 +107,7 @@ app/
   reception/page.tsx    # كونسول الاستقبال
   doctor/page.tsx       # قائمة الأطباء
   doctor/[id]/page.tsx  # غرفة الكشفية
+  admin/page.tsx        # لوحة تحكم المطوّر (صلاحيات كاملة)
 components/
   ui/                   # مكونات أساسية بأسلوب shadcn (button, dialog, select, …)
   shared/               # الهيدر، اللوجو، الشارات، كروت الإحصائيات، الإعدادات
@@ -122,7 +124,7 @@ supabase/schema.sql     # السكيما الكاملة + RLS + نشر Realtime
 ## الاختبارات
 
 ```bash
-npm run test:smoke   # 28 اختبار دخان على محرك المعادات والسيد والمخزن المحلي
+npm run test:smoke   # 38 اختبار دخان: محرك المعادات، السيد، المخزن المحلي، وأدوات الأدمن
 ```
 
 ## قائمة تحصين الإنتاج
