@@ -21,10 +21,10 @@ export function LiveIndicator({
       )}
       title={
         mode === "supabase"
-          ? "Connected to Supabase — realtime stream active"
+          ? "متصل بـ Supabase — البث المباشر يعمل"
           : mode === "demo"
-            ? "Local demo backend — realtime simulated across tabs"
-            : "Connecting…"
+            ? "قاعدة بيانات تجريبية محلية — مزامنة بين التابات"
+            : "جارٍ الاتصال…"
       }
     >
       <span className="relative flex h-2 w-2">
@@ -38,7 +38,7 @@ export function LiveIndicator({
           )}
         />
       </span>
-      {showLabel && (mode === "connecting" ? "Connecting…" : "Live")}
+      {showLabel && (mode === "connecting" ? "جارٍ الاتصال…" : "مباشر")}
     </span>
   );
 }

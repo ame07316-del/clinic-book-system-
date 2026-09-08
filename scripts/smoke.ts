@@ -26,8 +26,8 @@ function check(name: string, cond: boolean) {
 }
 
 // 1. utils
-check("formatTimeSlot 14:30 -> 2:30 PM", formatTimeSlot("14:30") === "2:30 PM");
-check("formatTimeSlot 00:15 -> 12:15 AM", formatTimeSlot("00:15") === "12:15 AM");
+check("formatTimeSlot 14:30 -> 2:30 م", formatTimeSlot("14:30") === "2:30 م");
+check("formatTimeSlot 00:15 -> 12:15 ص", formatTimeSlot("00:15") === "12:15 ص");
 check("timeToMinutes", timeToMinutes("09:30") === 570);
 const today = toDateStr(new Date());
 check("addDays", addDays(today, 1) !== today);
@@ -76,7 +76,7 @@ check("getDoctors joins profiles", doctors.length === 6 && doctors.every((d) => 
 const appts = await ls.getAppointments({ date: today });
 check("today appointments exist", appts.length >= 15);
 check("joined patient+doctor", appts.every((a) => a.patient && a.doctor?.profile));
-const cardio = doctors.find((d) => d.specialty === "Cardiology")!;
+const cardio = doctors.find((d) => d.specialty === "القلب والأوعية الدموية")!;
 const cardioAppts = await ls.getAppointments({ date: today, doctorId: cardio.id });
 check("filter by doctor", cardioAppts.length === 8);
 
@@ -90,8 +90,8 @@ const paid = await ls.updateAppointment(waiting.id, { payment_status: "paid", pa
 check("payment toggles + paid_at set", paid.payment_status === "paid" && Boolean(paid.paid_at));
 
 // walk-in registration
-const p = await ls.createPatient({ full_name: "Test Walkin", phone: "+1 (555) 999-0000" });
-const dup = await ls.createPatient({ full_name: "Test Walkin Again", phone: "+1 (555) 999-0000" });
+const p = await ls.createPatient({ full_name: "مريض تجربة", phone: "+20 199 999 0000" });
+const dup = await ls.createPatient({ full_name: "مريض تجربة ثانية", phone: "+20 199 999 0000" });
 check("createPatient dedupes by phone", p.id === dup.id);
 const appt = await ls.createAppointment({
   patient_id: p.id,
@@ -100,7 +100,7 @@ const appt = await ls.createAppointment({
   time_slot: "16:30",
   status: "waiting",
 });
-check("walk-in appointment created", appt.patient?.full_name === "Test Walkin");
+check("walk-in appointment created", appt.patient?.full_name === "مريض تجربة");
 
 // schedule blocks with capacity override
 const blk = await ls.createScheduleBlock({
@@ -123,15 +123,15 @@ check("block deleted", (await ls.getScheduleBlocks({ date: today, doctorId: card
 // medical record upsert
 const rec = await ls.upsertMedicalRecord({
   appointment_id: appt.id,
-  diagnosis: "Test dx",
+  diagnosis: "تشخيص تجربة",
   prescription: [{ id: "r1", medicine: "Test meds", dosage: "1 tab", frequency: "Once daily", duration: "5 days" }],
 });
 const rec2 = await ls.upsertMedicalRecord({
   appointment_id: appt.id,
-  diagnosis: "Test dx v2",
+  diagnosis: "تشخيص تجربة v2",
   prescription: [],
 });
-check("medical record upsert (not duplicate)", rec2.id === rec.id && rec2.diagnosis === "Test dx v2");
+check("medical record upsert (not duplicate)", rec2.id === rec.id && rec2.diagnosis === "تشخيص تجربة v2");
 
 // patient history source
 const records = await ls.getMedicalRecords();

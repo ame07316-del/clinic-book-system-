@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, BedDouble, CalendarCheck2, CircleDollarSign } from "lucide-react";
+import { ArrowLeft, BedDouble, Banknote, CalendarCheck2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
 import { SiteHeader } from "@/components/shared/site-header";
 import { specialtyMeta } from "@/lib/specialties";
 import { useAppointments, useDoctors } from "@/lib/data";
-import { initials, todayStr } from "@/lib/utils";
+import { avatarHue, initials, todayStr } from "@/lib/utils";
 
 export function DoctorPicker() {
   const today = todayStr();
@@ -19,10 +19,10 @@ export function DoctorPicker() {
       <SiteHeader />
       <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
         <div className="mb-8 max-w-2xl">
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Doctor Dashboard</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">لوحة الطبيب</h1>
           <p className="mt-2 text-muted-foreground">
-            Choose a doctor profile to open their consultation workspace with a realtime waiting
-            room feed, e-prescriptions and one-click visit completion.
+            اختر ملف طبيب لفتح مساحة الكشفية مع قائمة الانتظار الحية، والوصفات الإلكترونية،
+            وإنهاء الزيارة بضغطة واحدة.
           </p>
         </div>
 
@@ -35,13 +35,13 @@ export function DoctorPicker() {
         ) : (doctors ?? []).length === 0 ? (
           <EmptyState
             icon={CalendarCheck2}
-            title="No doctors found"
-            description="Seed the demo data from the header menu (⋮ → Seed demo data) to populate six specialists with today's queue."
+            title="لا يوجد أطباء"
+            description="حمّل البيانات التجريبية من قائمة الهيدر (⋮ ← تحميل بيانات تجريبية) لتعبئة ستة تخصصات وطابور اليوم."
           />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {(doctors ?? []).map((d) => {
-              const name = d.profile?.full_name ?? "Doctor";
+              const name = d.profile?.full_name ?? "طبيب";
               const meta = specialtyMeta(d.specialty);
               const Icon = meta.icon;
               const todayAppts = (appointments ?? []).filter((a) => a.doctor_id === d.id);
@@ -55,7 +55,10 @@ export function DoctorPicker() {
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-600 text-sm font-bold text-white shadow-lift">
+                      <span
+                        className="flex h-12 w-12 items-center justify-center rounded-2xl text-sm font-bold text-white shadow-lift"
+                        style={{ background: avatarHue(name) }}
+                      >
                         {initials(name)}
                       </span>
                       <div>
@@ -67,19 +70,19 @@ export function DoctorPicker() {
                         </span>
                       </div>
                     </div>
-                    <ArrowRight className="h-4 w-4 text-slate-300 transition-all group-hover:translate-x-1 group-hover:text-teal-500" />
+                    <ArrowLeft className="h-4 w-4 text-slate-300 transition-all group-hover:-translate-x-1 group-hover:text-teal-500" />
                   </div>
                   <div className="mt-4 flex items-center gap-4 border-t border-dashed pt-3 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1.5">
                       <BedDouble className="h-3.5 w-3.5 text-amber-500" />
-                      <span className="font-semibold text-slate-700">{waiting}</span> waiting
+                      <span className="font-semibold text-slate-700">{waiting}</span> بالانتظار
                     </span>
                     <span className="flex items-center gap-1.5">
                       <CalendarCheck2 className="h-3.5 w-3.5 text-sky-500" />
-                      <span className="font-semibold text-slate-700">{total}</span> today
+                      <span className="font-semibold text-slate-700">{total}</span> اليوم
                     </span>
                     <span className="flex items-center gap-1.5">
-                      <CircleDollarSign className="h-3.5 w-3.5 text-teal-500" /> ${d.consultation_fee}
+                      <Banknote className="h-3.5 w-3.5 text-teal-500" /> {d.consultation_fee} ج.م
                     </span>
                   </div>
                 </Link>

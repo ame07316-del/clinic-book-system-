@@ -2,28 +2,27 @@ import type { Appointment, MedicalRecord, PaymentMethod } from "@/lib/types";
 import { formatCurrency, formatDateLong, formatTimeSlot } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
-/*  Print window exporters — prescription (PDF via print) & receipt.   */
-/*  Opens a standalone, print-styled document and calls window.print().*/
+/*  نوافذ الطباعة — الوصفة الطبية (PDF عبر الطباعة) وإيصال الدفع.      */
 /* ------------------------------------------------------------------ */
 
 const CLINIC = {
-  name: "MediCore Medical Center",
-  tagline: "Multi-specialty Clinic & Diagnostics",
-  address: "124 Wellness Avenue, Suite 300, Springfield, IL 62701",
-  phone: "+1 (555) 010-1000",
+  name: "ميدي كور — المركز الطبي",
+  tagline: "عيادات متعددة التخصصات وتحاليل",
+  address: "124 شارع الصحة، المهندسين، القاهرة",
+  phone: "+20 2 3300 1000",
   email: "care@medicore.health",
 };
 
 function baseDoc(title: string, body: string): string {
   return `<!doctype html>
-<html>
+<html dir="rtl" lang="ar">
 <head>
 <meta charset="utf-8" />
 <title>${title}</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    font-family: "Segoe UI", system-ui, -apple-system, Helvetica, Arial, sans-serif;
+    font-family: "Cairo", "Segoe UI", Tahoma, system-ui, sans-serif;
     color: #0f172a; background: #f8fafc; padding: 32px;
   }
   .sheet {
@@ -38,10 +37,10 @@ function baseDoc(title: string, body: string): string {
   }
   .toolbar {
     max-width: 780px; margin: 0 auto 16px; display: flex;
-    justify-content: flex-end; gap: 8px;
+    justify-content: flex-start; gap: 8px;
   }
   .btn {
-    font: inherit; font-weight: 600; font-size: 14px; cursor: pointer;
+    font: inherit; font-weight: 700; font-size: 14px; cursor: pointer;
     padding: 9px 18px; border-radius: 8px; border: 1px solid #cbd5e1;
     background: #fff; color: #0f172a;
   }
@@ -50,8 +49,8 @@ function baseDoc(title: string, body: string): string {
 </head>
 <body>
   <div class="toolbar no-print">
-    <button class="btn primary" onclick="window.print()">Print / Save as PDF</button>
-    <button class="btn" onclick="window.close()">Close</button>
+    <button class="btn primary" onclick="window.print()">طباعة / حفظ PDF</button>
+    <button class="btn" onclick="window.close()">إغلاق</button>
   </div>
   <div class="sheet">${body}</div>
   <script>window.onload = function(){ setTimeout(function(){ window.print(); }, 250); };</script>
@@ -67,11 +66,11 @@ function header(): string {
         <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v12"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
       </div>
       <div>
-        <div style="font-size:20px;font-weight:800;color:#0f172a;letter-spacing:-.02em;">${CLINIC.name}</div>
+        <div style="font-size:20px;font-weight:800;color:#0f172a;">${CLINIC.name}</div>
         <div style="font-size:12px;color:#64748b;">${CLINIC.tagline}</div>
       </div>
     </div>
-    <div style="text-align:right;font-size:11px;color:#64748b;line-height:1.6;">
+    <div style="text-align:left;font-size:11px;color:#64748b;line-height:1.8;">
       ${CLINIC.address}<br/>${CLINIC.phone} · ${CLINIC.email}
     </div>
   </div>`;
@@ -79,8 +78,8 @@ function header(): string {
 
 function labelValue(label: string, value: string): string {
   return `<div>
-    <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;font-weight:700;">${label}</div>
-    <div style="font-size:14px;font-weight:600;color:#0f172a;margin-top:2px;">${value}</div>
+    <div style="font-size:10px;color:#94a3b8;font-weight:700;">${label}</div>
+    <div style="font-size:14px;font-weight:700;color:#0f172a;margin-top:2px;">${value}</div>
   </div>`;
 }
 
@@ -96,7 +95,7 @@ export function printPrescription(
   record: MedicalRecord | null,
 ): void {
   const doctor = appointment.doctor;
-  const doctorName = doctor?.profile?.full_name ?? "Consulting Physician";
+  const doctorName = doctor?.profile?.full_name ?? "الطبيب المعالج";
   const patient = appointment.patient;
 
   const medRows = (record?.prescription ?? [])
@@ -118,52 +117,52 @@ export function printPrescription(
   ${header()}
   <div style="padding:28px 36px 8px;">
     <div style="display:flex;justify-content:space-between;align-items:flex-end;">
-      <div style="font-size:22px;font-weight:800;color:#0d9488;letter-spacing:.01em;">℞ Prescription</div>
+      <div style="font-size:22px;font-weight:800;color:#0d9488;">وصفة طبية</div>
       <div style="font-size:12px;color:#64748b;">${formatDateLong(appointment.appointment_date)}</div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:22px;padding:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;">
-      ${labelValue("Patient", esc(patient?.full_name) || "—")}
-      ${labelValue("Phone", esc(patient?.phone) || "—")}
-      ${labelValue("Appointment", `${formatTimeSlot(appointment.time_slot)}`)}
-      ${labelValue("Record ID", `#${appointment.id.slice(0, 8).toUpperCase()}`)}
+      ${labelValue("المريض", esc(patient?.full_name) || "—")}
+      ${labelValue("الهاتف", esc(patient?.phone) || "—")}
+      ${labelValue("الموعد", formatTimeSlot(appointment.time_slot))}
+      ${labelValue("رقم السجل", `#${appointment.id.slice(0, 8).toUpperCase()}`)}
     </div>
     <div style="margin-top:24px;">
-      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;font-weight:700;">Diagnosis / Clinical Notes</div>
-      <div style="margin-top:6px;font-size:14px;line-height:1.6;color:#0f172a;">${esc(record?.diagnosis) || "—"}</div>
+      <div style="font-size:10px;color:#94a3b8;font-weight:700;">التشخيص والملاحظات الإكلينيكية</div>
+      <div style="margin-top:6px;font-size:14px;line-height:1.9;color:#0f172a;">${esc(record?.diagnosis) || "—"}</div>
     </div>
     <div style="margin-top:24px;">
       <table style="width:100%;border-collapse:collapse;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
         <thead>
           <tr style="background:#f0fdfa;border-bottom:1px solid #e2e8f0;">
-            <th style="padding:10px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#0f766e;"></th>
-            <th style="padding:10px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#0f766e;">Medicine</th>
-            <th style="padding:10px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#0f766e;">Frequency</th>
-            <th style="padding:10px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#0f766e;">Duration</th>
+            <th style="padding:10px 12px;text-align:right;font-size:10px;color:#0f766e;"></th>
+            <th style="padding:10px 12px;text-align:right;font-size:10px;color:#0f766e;">الدواء</th>
+            <th style="padding:10px 12px;text-align:right;font-size:10px;color:#0f766e;">الجرعة</th>
+            <th style="padding:10px 12px;text-align:right;font-size:10px;color:#0f766e;">المدة</th>
           </tr>
         </thead>
-        <tbody>${medRows || `<tr><td colspan="4" style="padding:16px;color:#94a3b8;font-size:13px;">No medications prescribed.</td></tr>`}</tbody>
+        <tbody>${medRows || `<tr><td colspan="4" style="padding:16px;color:#94a3b8;font-size:13px;">لا توجد أدوية بهذه الوصفة.</td></tr>`}</tbody>
       </table>
     </div>
     <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:56px;padding-bottom:36px;">
-      <div style="font-size:11px;color:#94a3b8;">
-        This prescription is generated electronically by ${CLINIC.name}.<br/>
-        Please verify medicine names before dispensing.
+      <div style="font-size:11px;color:#94a3b8;line-height:1.8;">
+        هذه الوصفة مُنشأة إلكترونيًا من ${CLINIC.name}.<br/>
+        يُرجى التحقق من أسماء الأدوية قبل الصرف.
       </div>
       <div style="text-align:center;">
         <div style="width:210px;border-top:1.5px solid #0f172a;padding-top:6px;font-size:13px;font-weight:700;">${esc(doctorName)}</div>
-        <div style="font-size:11px;color:#64748b;margin-top:2px;">${esc(doctor?.specialty) || ""} · License #${(appointment.doctor_id ?? "XX").slice(0, 8).toUpperCase()}</div>
+        <div style="font-size:11px;color:#64748b;margin-top:2px;">${esc(doctor?.specialty) || ""} · ترخيص #${(appointment.doctor_id ?? "XX").slice(0, 8).toUpperCase()}</div>
       </div>
     </div>
   </div>`;
 
-  openWindow("Prescription", baseDoc(`Prescription — ${patient?.full_name ?? "Patient"}`, body));
+  openWindow("الوصفة الطبية", baseDoc(`وصفة طبية — ${patient?.full_name ?? "مريض"}`, body));
 }
 
 const METHOD_LABEL: Record<PaymentMethod, string> = {
-  cash: "Cash",
-  card: "Card",
-  insurance: "Insurance",
-  upi: "UPI / Digital",
+  cash: "نقدي",
+  card: "بطاقة",
+  insurance: "تأمين",
+  upi: "محفظة إلكترونية",
 };
 
 export function printReceipt(appointment: Appointment): void {
@@ -173,44 +172,44 @@ export function printReceipt(appointment: Appointment): void {
   ${header()}
   <div style="padding:28px 36px 36px;">
     <div style="display:flex;justify-content:space-between;align-items:flex-end;">
-      <div style="font-size:22px;font-weight:800;color:#0f172a;">Payment Receipt</div>
-      <div style="font-size:12px;color:#64748b;">Receipt #RC-${appointment.id.slice(0, 8).toUpperCase()}</div>
+      <div style="font-size:22px;font-weight:800;color:#0f172a;">إيصال دفع</div>
+      <div style="font-size:12px;color:#64748b;">إيصال #RC-${appointment.id.slice(0, 8).toUpperCase()}</div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:22px;padding:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;">
-      ${labelValue("Patient", esc(appointment.patient?.full_name) || "—")}
-      ${labelValue("Doctor", esc(doctor?.profile?.full_name) || "—")}
-      ${labelValue("Date", formatDateLong(appointment.appointment_date))}
-      ${labelValue("Time", formatTimeSlot(appointment.time_slot))}
+      ${labelValue("المريض", esc(appointment.patient?.full_name) || "—")}
+      ${labelValue("الطبيب", esc(doctor?.profile?.full_name) || "—")}
+      ${labelValue("التاريخ", formatDateLong(appointment.appointment_date))}
+      ${labelValue("الوقت", formatTimeSlot(appointment.time_slot))}
     </div>
     <table style="width:100%;border-collapse:collapse;margin-top:26px;border-top:1px solid #e2e8f0;">
       <tr>
-        <td style="padding:12px 4px;color:#334155;">Consultation — ${esc(doctor?.specialty) || "Specialist"}</td>
-        <td style="padding:12px 4px;text-align:right;font-weight:600;">${formatCurrency(fee)}</td>
+        <td style="padding:12px 4px;color:#334155;">كشف — ${esc(doctor?.specialty) || "تخصص"}</td>
+        <td style="padding:12px 4px;text-align:left;font-weight:600;">${formatCurrency(fee)}</td>
       </tr>
       <tr>
-        <td style="padding:12px 4px;color:#64748b;">Payment method</td>
-        <td style="padding:12px 4px;text-align:right;color:#334155;">${appointment.payment_method ? METHOD_LABEL[appointment.payment_method] : "—"}</td>
+        <td style="padding:12px 4px;color:#64748b;">طريقة الدفع</td>
+        <td style="padding:12px 4px;text-align:left;color:#334155;">${appointment.payment_method ? METHOD_LABEL[appointment.payment_method] : "—"}</td>
       </tr>
       <tr style="border-top:2px solid #0f172a;">
-        <td style="padding:14px 4px;font-weight:800;font-size:15px;">Total Paid</td>
-        <td style="padding:14px 4px;text-align:right;font-weight:800;font-size:18px;color:#0d9488;">${formatCurrency(fee)}</td>
+        <td style="padding:14px 4px;font-weight:800;font-size:15px;">إجمالي المدفوع</td>
+        <td style="padding:14px 4px;text-align:left;font-weight:800;font-size:18px;color:#0d9488;">${formatCurrency(fee)}</td>
       </tr>
     </table>
     <div style="margin-top:14px;display:inline-block;background:#f0fdfa;color:#0f766e;font-weight:700;font-size:12px;padding:6px 14px;border-radius:999px;border:1px solid #99f6e4;">
-      ✓ PAID IN FULL — Thank you
+      ✓ مدفوع بالكامل — شكرًا لكم
     </div>
     <div style="margin-top:40px;font-size:11px;color:#94a3b8;">
-      Simulated receipt generated by the MediCore demo. Not valid for tax purposes.
+      إيصال تجريبي من نظام ميدي كور — غير صالح للأغراض الضريبية.
     </div>
   </div>`;
 
-  openWindow("Receipt", baseDoc(`Receipt — ${appointment.patient?.full_name ?? "Patient"}`, body));
+  openWindow("إيصال الدفع", baseDoc(`إيصال — ${appointment.patient?.full_name ?? "مريض"}`, body));
 }
 
 function openWindow(title: string, html: string): void {
   const win = window.open("", "_blank", "width=880,height=1000");
   if (!win) {
-    alert("Please allow pop-ups to print documents.");
+    alert("من فضلك اسمح بالنوافذ المنبثقة لطباعة المستندات.");
     return;
   }
   win.document.open();

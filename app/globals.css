@@ -57,8 +57,8 @@
 }
 
 @theme inline {
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --font-sans: "Cairo", "Segoe UI", Tahoma, ui-sans-serif, system-ui, -apple-system,
+    "Helvetica Neue", Arial, "Noto Sans Arabic", sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", "Courier New", monospace;
   --color-background: var(--background);
@@ -125,7 +125,7 @@
 
 @utility bg-grid-teal {
   background-image:
-    linear-gradient(to right, color-mix(in oklch, var(--primary) 7%, transparent) 1px, transparent 1px),
+    linear-gradient(to left, color-mix(in oklch, var(--primary) 7%, transparent) 1px, transparent 1px),
     linear-gradient(to bottom, color-mix(in oklch, var(--primary) 7%, transparent) 1px, transparent 1px);
   background-size: 32px 32px;
 }

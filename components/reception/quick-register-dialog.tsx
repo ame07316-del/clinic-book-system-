@@ -25,9 +25,9 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DateStrip, SlotGrid } from "@/components/shared/slot-grid";
 import { useAppData, useDoctors } from "@/lib/data";
 import type { Appointment } from "@/lib/types";
-import { cn, todayStr, addDays, minutesToTime } from "@/lib/utils";
+import { cn, todayStr, addDays, minutesToTime, formatTimeSlot } from "@/lib/utils";
 
-/** Nearest 15-min slot from now, clamped to clinic hours (walk-in queue time). */
+/** أقرب معاد ربع ساعة من الآن، محدود بمواعيد العيادة (وقت الدخول الفوري). */
 function walkInSlotNow(): string {
   const now = new Date();
   const mins = Math.ceil((now.getHours() * 60 + now.getMinutes()) / 15) * 15;
@@ -71,11 +71,11 @@ export function QuickRegisterDialog({
 
   const submit = async () => {
     if (!ds || !doctorId) {
-      toast.error("Please select a doctor");
+      toast.error("من فضلك اختر الطبيب");
       return;
     }
     if (!fullName.trim()) {
-      toast.error("Patient name is required");
+      toast.error("اسم المريض مطلوب");
       return;
     }
     setBusy(true);
@@ -93,15 +93,17 @@ export function QuickRegisterDialog({
         status: isWalkIn ? "waiting" : "scheduled",
         reason: reason || null,
       });
-      toast.success(isWalkIn ? "Walk-in registered" : "Appointment booked", {
-        description: `${patient.full_name} · ${isWalkIn ? "added to the waiting room" : `scheduled at ${slot}`}`,
+      toast.success(isWalkIn ? "تم تسجيل الحالة الفورية" : "تم حجز الموعد", {
+        description: isWalkIn
+          ? `${patient.full_name} — أُضيف لغرفة الانتظار الآن`
+          : `${patient.full_name} — محجوز الساعة ${formatTimeSlot(slot ?? "")}`,
       });
       onRegistered?.(appt);
       reset();
       onOpenChange(false);
     } catch (e) {
-      toast.error("Registration failed", {
-        description: e instanceof Error ? e.message : "Unknown error",
+      toast.error("فشل التسجيل", {
+        description: e instanceof Error ? e.message : "خطأ غير معروف",
       });
     } finally {
       setBusy(false);
@@ -119,49 +121,48 @@ export function QuickRegisterDialog({
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <UserPlus className="h-5 w-5 text-teal-600" /> Quick registration & booking
+            <UserPlus className="h-5 w-5 text-teal-600" /> تسجيل سريع وحجز
           </DialogTitle>
           <DialogDescription>
-            Register a walk-in patient and drop them straight into the waiting room, or book a
-            slot on the spot.
+            سجّل مريضًا فوريًا وأدخله غرفة الانتظار مباشرة، أو احجز له معادًا في نفس اللحظة.
           </DialogDescription>
         </DialogHeader>
 
         <Tabs value={mode} onValueChange={(v) => setMode(v as "walkin" | "book")}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="walkin">
-              <Zap /> Walk-in (queue now)
+              <Zap /> دخول فوري (انتظار الآن)
             </TabsTrigger>
             <TabsTrigger value="book">
-              <CalendarPlus /> Book a slot
+              <CalendarPlus /> حجز معاد
             </TabsTrigger>
           </TabsList>
         </Tabs>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <Label htmlFor="qr-name">Patient full name *</Label>
+            <Label htmlFor="qr-name">اسم المريض بالكامل *</Label>
             <Input
               id="qr-name"
-              placeholder="e.g. Olivia Bennett"
+              placeholder="مثال: أوليفيا بنيонтакте"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="qr-phone">Phone</Label>
+            <Label htmlFor="qr-phone">رقم الهاتف</Label>
             <Input
               id="qr-phone"
-              placeholder="+1 (555) 000-0000"
+              placeholder="+20 1xx xxx xxxx"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="qr-doctor">Assign doctor *</Label>
+            <Label>الطبيب *</Label>
             <Select value={doctorId ?? ""} onValueChange={(v) => setDoctorId(v)}>
-              <SelectTrigger id="qr-doctor">
-                <SelectValue placeholder="Select doctor" />
+              <SelectTrigger>
+                <SelectValue placeholder="اختر الطبيب" />
               </SelectTrigger>
               <SelectContent>
                 {(doctors ?? []).map((d) => (
@@ -173,10 +174,10 @@ export function QuickRegisterDialog({
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="qr-reason">Reason for visit</Label>
+            <Label htmlFor="qr-reason">سبب الزيارة</Label>
             <Input
               id="qr-reason"
-              placeholder="e.g. Sore throat, follow-up…"
+              placeholder="مثال: التهاب حلق، إعادة فحص…"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
             />
@@ -185,9 +186,9 @@ export function QuickRegisterDialog({
 
         {mode === "walkin" ? (
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-            <span className="font-semibold">Walk-in mode:</span> the patient will be created and
-            immediately placed in the <span className="font-semibold">Waiting</span> queue at{" "}
-            {walkInSlot} (today). The doctor&apos;s live feed updates instantly.
+            <span className="font-semibold">وضع الدخول الفوري:</span> سيتم إنشاء المريض وإضافته
+            مباشرة إلى غرفة <span className="font-semibold">الانتظار</span> الساعة{" "}
+            {formatTimeSlot(walkInSlot)} (اليوم)، وشاشة الطبيب تتحدث فورًا.
           </div>
         ) : (
           <div className="space-y-3 rounded-xl border p-3">
@@ -201,20 +202,20 @@ export function QuickRegisterDialog({
                 includePast={date === todayStr()}
               />
             ) : (
-              <p className={cn("text-sm text-muted-foreground")}>Select a doctor to see live slot availability.</p>
+              <p className={cn("text-sm text-muted-foreground")}>اختر الطبيب لعرض المعادات المتاحة لحظيًا.</p>
             )}
           </div>
         )}
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            إلغاء
           </Button>
           <Button
             onClick={() => void submit()}
             disabled={busy || (mode === "book" && (!slot || !doctorId)) || (mode === "walkin" && !doctorId)}
           >
-            {busy ? "Registering…" : mode === "walkin" ? "Register walk-in" : "Book appointment"}
+            {busy ? "جارٍ التسجيل…" : mode === "walkin" ? "تسجيل الحالة الفورية" : "حجز الموعد"}
           </Button>
         </DialogFooter>
       </DialogContent>

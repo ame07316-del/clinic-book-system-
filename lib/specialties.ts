@@ -15,7 +15,7 @@ import { initials as toInitials } from "@/lib/utils";
 import { avatarHue } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
-/*  Specialty metadata — icons + colors used across the portal.        */
+/*  بيانات التخصصات — أيقونات وألوان مستخدمة في البوابة                */
 /* ------------------------------------------------------------------ */
 
 export interface SpecialtyMeta {
@@ -24,12 +24,12 @@ export interface SpecialtyMeta {
 }
 
 const SPECIALTIES: Record<string, SpecialtyMeta> = {
-  cardiology: { icon: HeartPulse, tint: "bg-rose-50 text-rose-600 ring-rose-100" },
-  pediatrics: { icon: Baby, tint: "bg-amber-50 text-amber-600 ring-amber-100" },
-  dermatology: { icon: Sparkles, tint: "bg-violet-50 text-violet-600 ring-violet-100" },
-  orthopedics: { icon: Bone, tint: "bg-orange-50 text-orange-600 ring-orange-100" },
-  neurology: { icon: Brain, tint: "bg-indigo-50 text-indigo-600 ring-indigo-100" },
-  "general medicine": { icon: Stethoscope, tint: "bg-teal-50 text-teal-600 ring-teal-100" },
+  "القلب والأوعية الدموية": { icon: HeartPulse, tint: "bg-rose-50 text-rose-600 ring-rose-100" },
+  "طب الأطفال": { icon: Baby, tint: "bg-amber-50 text-amber-600 ring-amber-100" },
+  "الأمراض الجلدية": { icon: Sparkles, tint: "bg-violet-50 text-violet-600 ring-violet-100" },
+  "جراحة العظام": { icon: Bone, tint: "bg-orange-50 text-orange-600 ring-orange-100" },
+  "المخ والأعصاب": { icon: Brain, tint: "bg-indigo-50 text-indigo-600 ring-indigo-100" },
+  "الباطنة العامة": { icon: Stethoscope, tint: "bg-teal-50 text-teal-600 ring-teal-100" },
 };
 
 const FALLBACKS = [Activity, Eye, Pill, Syringe, Stethoscope];
@@ -42,8 +42,8 @@ const FALLBACK_TINTS = [
 ];
 
 export function specialtyMeta(specialty: string): SpecialtyMeta {
-  const key = specialty.toLowerCase().trim();
-  if (SPECIALTIES[key]) return SPECIALTIES[key];
+  const key = specialty.trim();
+  if (SPECIALTIES[key]) return SPECIALTIES[key]!;
   let hash = 0;
   for (let i = 0; i < specialty.length; i++) hash = (hash * 31 + specialty.charCodeAt(i)) | 0;
   const idx = Math.abs(hash) % FALLBACKS.length;

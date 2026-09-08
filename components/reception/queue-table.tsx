@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
-  ArrowRight,
+  ArrowLeft,
   BedDouble,
   CheckCircle2,
   CreditCard,
@@ -28,12 +28,12 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { PaymentBadge, StatusBadge } from "@/components/shared/status-badge";
 import { useAppData } from "@/lib/data";
 import type { Appointment } from "@/lib/types";
-import { cn, formatCurrency, formatTimeSlot, initials, timeAgo } from "@/lib/utils";
+import { avatarHue, cn, formatCurrency, formatDateShort, formatTimeSlot, initials, timeAgo } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
-/*  QueueTable — the live patient queue. Status transitions:           */
-/*  Scheduled → Waiting → In Consultation → Completed  (+ Cancelled)   */
-/*  Updates in realtime via the Supabase bus (or local demo bus).      */
+/*  QueueTable — طابور المرضى المباشر. تحولات الحالة:                  */
+/*  محجوز ← في الانتظار ← داخل الكشفية ← تم الكشف  (+ ملغي)            */
+/*  يتحدث لحظيًا عبر Supabase Realtime (أو ناقل الوضع التجريبي).        */
 /* ------------------------------------------------------------------ */
 
 export function QueueTable({
@@ -73,11 +73,11 @@ export function QueueTable({
     try {
       await ds.updateAppointment(a.id, { status });
       toast.success(message, {
-        description: `${a.patient?.full_name} → ${status.replace("_", " ")}`,
+        description: `${a.patient?.full_name} ← ${STATUS_TEXT[status]}`,
       });
     } catch (e) {
-      toast.error("Status update failed", {
-        description: e instanceof Error ? e.message : "Unknown error",
+      toast.error("فشل تحديث الحالة", {
+        description: e instanceof Error ? e.message : "خطأ غير معروف",
       });
     } finally {
       setBusyId(null);
@@ -92,23 +92,25 @@ export function QueueTable({
     }
     if (confirmTimer.current) clearTimeout(confirmTimer.current);
     setConfirmCancelId(null);
-    void setTransition(a, "cancelled", "Appointment cancelled");
+    void setTransition(a, "cancelled", "تم إلغاء الموعد");
   };
 
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="relative w-full max-w-xs">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search patient, doctor, specialty…"
-            className="pl-9"
+            placeholder="ابحث عن مريض أو طبيب أو تخصص…"
+            className="ps-9"
           />
         </div>
         <p className="text-xs text-muted-foreground">
-          {loading ? "Syncing…" : `${filtered.length} appointment${filtered.length === 1 ? "" : "s"}${doctorFilterLabel ? ` · ${doctorFilterLabel}` : " · all doctors"}`}
+          {loading
+            ? "جارٍ المزامنة…"
+            : `${filtered.length} موعد${filtered.length === 1 ? "" : "ات"}${doctorFilterLabel ? ` · ${doctorFilterLabel}` : " · كل الأطباء"}`}
         </p>
       </div>
 
@@ -121,21 +123,21 @@ export function QueueTable({
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={Stethoscope}
-          title="No appointments in view"
-          description="Seed demo data from the header menu or register a walk-in to populate today's queue."
+          title="لا توجد مواعيد في العرض الحالي"
+          description="حمّل البيانات التجريبية من قائمة الهيدر أو سجّل مريضًا فورًا لتعبئة طابور اليوم."
         />
       ) : (
         <div className="overflow-hidden rounded-xl border bg-card shadow-soft">
           <Table>
             <TableHeader>
               <TableRow className="bg-slate-50/80 hover:bg-slate-50/80">
-                <TableHead className="w-10 pl-4">#</TableHead>
-                <TableHead>Patient</TableHead>
-                <TableHead>Doctor</TableHead>
-                <TableHead>Time</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Payment</TableHead>
-                <TableHead className="text-right pr-4">Actions</TableHead>
+                <TableHead className="w-10 pe-4">#</TableHead>
+                <TableHead>المريض</TableHead>
+                <TableHead>الطبيب</TableHead>
+                <TableHead>الوقت</TableHead>
+                <TableHead>الحالة</TableHead>
+                <TableHead>الدفع</TableHead>
+                <TableHead className="text-end pl-4">إجراءات</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -144,20 +146,20 @@ export function QueueTable({
                 const paid = a.payment_status === "paid";
                 return (
                   <TableRow key={a.id} className="group">
-                    <TableCell className="pl-4">
+                    <TableCell className="pe-4">
                       <span className="text-xs font-semibold text-slate-300">{i + 1}</span>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <span
                           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-                          style={{ background: `oklch(0.55 0.09 ${((a.patient?.full_name ?? "?").length * 37) % 360})` }}
+                          style={{ background: avatarHue(a.patient?.full_name ?? "؟") }}
                         >
-                          {initials(a.patient?.full_name ?? "?")}
+                          {initials(a.patient?.full_name ?? "؟")}
                         </span>
                         <div className="min-w-0">
                           <p className="truncate font-semibold text-slate-800">
-                            {a.patient?.full_name ?? "Unknown patient"}
+                            {a.patient?.full_name ?? "مريض غير معروف"}
                           </p>
                           <p className="truncate text-xs text-muted-foreground">
                             {a.reason ?? a.patient?.phone ?? "—"}
@@ -175,7 +177,9 @@ export function QueueTable({
                       <p className="text-sm font-semibold text-slate-700">
                         {formatTimeSlot(a.time_slot)}
                       </p>
-                      <p className="text-[11px] text-muted-foreground">{a.appointment_date}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {formatDateShort(a.appointment_date)}
+                      </p>
                     </TableCell>
                     <TableCell>
                       <StatusBadge status={a.status} animated />
@@ -184,11 +188,13 @@ export function QueueTable({
                       <div className="flex flex-col items-start gap-1">
                         <PaymentBadge paid={paid} />
                         <span className="text-[11px] text-muted-foreground">
-                          {paid ? `${formatCurrency(a.doctor?.consultation_fee ?? 0)} · ${timeAgo(a.paid_at)}` : formatCurrency(a.doctor?.consultation_fee ?? 0)}
+                          {paid
+                            ? `${formatCurrency(a.doctor?.consultation_fee ?? 0)} · ${timeAgo(a.paid_at)}`
+                            : formatCurrency(a.doctor?.consultation_fee ?? 0)}
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className="pr-4">
+                    <TableCell className="pl-4">
                       <div className="flex items-center justify-end gap-1.5">
                         {a.status === "scheduled" && (
                           <Button
@@ -196,9 +202,9 @@ export function QueueTable({
                             variant="outline"
                             disabled={busy}
                             className="border-amber-200 text-amber-700 hover:bg-amber-50 hover:text-amber-800"
-                            onClick={() => void setTransition(a, "waiting", "Patient moved to waiting room")}
+                            onClick={() => void setTransition(a, "waiting", "تم نقل المريض لغرفة الانتظار")}
                           >
-                            <BedDouble /> Check in
+                            <BedDouble /> تسجيل حضور
                           </Button>
                         )}
                         {a.status === "waiting" && (
@@ -206,11 +212,11 @@ export function QueueTable({
                             size="sm"
                             disabled={busy}
                             onClick={() =>
-                              void setTransition(a, "in_consultation", "Patient moved to consultation")
+                              void setTransition(a, "in_consultation", "المريض دخل الكشفية")
                             }
                           >
-                            <Stethoscope /> Send in
-                            <ArrowRight />
+                            <Stethoscope /> إرسال للكشفية
+                            <ArrowLeft />
                           </Button>
                         )}
                         {a.status === "in_consultation" && (
@@ -218,9 +224,9 @@ export function QueueTable({
                             size="sm"
                             variant="success"
                             disabled={busy}
-                            onClick={() => void setTransition(a, "completed", "Consultation completed")}
+                            onClick={() => void setTransition(a, "completed", "تم إنهاء الكشفية")}
                           >
-                            <CheckCircle2 /> Complete
+                            <CheckCircle2 /> إكمال
                           </Button>
                         )}
                         {(a.status === "completed" || a.status === "waiting" || a.status === "scheduled") && (
@@ -228,7 +234,7 @@ export function QueueTable({
                             size="sm"
                             variant="ghost"
                             disabled={busy}
-                            title={paid ? "View payment" : "Collect payment"}
+                            title={paid ? "عرض الدفع" : "تحصيل الدفع"}
                             onClick={() => onCollectPayment(a)}
                             className={cn(!paid && "text-teal-700 hover:bg-teal-50")}
                           >
@@ -248,7 +254,7 @@ export function QueueTable({
                             )}
                           >
                             {confirmCancelId === a.id ? <X /> : <LogOut />}
-                            {confirmCancelId === a.id ? "Confirm" : ""}
+                            {confirmCancelId === a.id ? "تأكيد" : ""}
                           </Button>
                         )}
                       </div>
@@ -263,3 +269,11 @@ export function QueueTable({
     </div>
   );
 }
+
+const STATUS_TEXT: Record<Appointment["status"], string> = {
+  scheduled: "محجوز",
+  waiting: "في الانتظار",
+  in_consultation: "داخل الكشفية",
+  completed: "تم الكشف",
+  cancelled: "ملغي",
+};

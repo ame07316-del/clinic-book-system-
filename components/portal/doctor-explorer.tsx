@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CalendarPlus, CircleDollarSign, Search, Star } from "lucide-react";
+import { Banknote, CalendarPlus, Search, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,11 +12,11 @@ import { computeSlotStates } from "@/lib/slots";
 import { specialtyMeta } from "@/lib/specialties";
 import { useAppointments, useDoctors, useScheduleBlocks } from "@/lib/data";
 import type { Doctor } from "@/lib/types";
-import { cn, formatTimeSlot, initials, todayStr } from "@/lib/utils";
+import { avatarHue, cn, formatTimeSlot, initials, todayStr } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
-/*  DoctorExplorer — specialty & doctor finder with live next-slot     */
-/*  availability computed from appointments + schedule blocks.         */
+/*  DoctorExplorer — باحث التخصصات والأطباء مع أقرب معاد متاح          */
+/*  محسوب لحظيًا من المواعيد وحظر المواعيد.                            */
 /* ------------------------------------------------------------------ */
 
 export function DoctorExplorer() {
@@ -63,25 +63,24 @@ export function DoctorExplorer() {
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-            Find your specialist
+            اختر طبيبك
           </h2>
           <p className="mt-1.5 text-muted-foreground">
-            Availability below is computed live — booked slots and doctor breaks grey out
-            automatically.
+            التوافر محسوب مباشرة — المواعيد المحجوزة واستراحات الأطباء تتشطب تلقائيًا.
           </p>
         </div>
         <div className="relative w-full max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search doctor or specialty…"
-            className="pl-9"
+            placeholder="ابحث عن طبيب أو تخصص…"
+            className="ps-9"
           />
         </div>
       </div>
 
-      {/* specialty chips */}
+      {/* شرائح التخصصات */}
       <div className="mb-7 flex flex-wrap gap-2">
         <button
           type="button"
@@ -93,7 +92,7 @@ export function DoctorExplorer() {
               : "border-slate-200 bg-card text-slate-600 hover:border-teal-300 hover:text-teal-700",
           )}
         >
-          All specialties
+          كل التخصصات
         </button>
         {specialties.map((s) => {
           const meta = specialtyMeta(s);
@@ -126,13 +125,13 @@ export function DoctorExplorer() {
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={Search}
-          title="No doctors match your search"
-          description="Try a different specialty or clear the search box."
+          title="لا يوجد أطباء مطابقون للبحث"
+          description="جرّب تخصصًا آخر أو امسح خانة البحث."
         />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((d) => {
-            const name = d.profile?.full_name ?? "Doctor";
+            const name = d.profile?.full_name ?? "طبيب";
             const meta = specialtyMeta(d.specialty);
             const Icon = meta.icon;
             const next = nextAvailable.get(d.id);
@@ -143,7 +142,10 @@ export function DoctorExplorer() {
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <span className="flex h-13 w-13 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-600 p-3 text-sm font-bold text-white shadow-lift">
+                    <span
+                      className="flex h-13 w-13 items-center justify-center rounded-2xl p-3 text-sm font-bold text-white shadow-lift"
+                      style={{ background: avatarHue(name) }}
+                    >
                       {initials(name)}
                     </span>
                     <div>
@@ -162,16 +164,15 @@ export function DoctorExplorer() {
 
                 <div className="mt-4 flex items-center gap-4 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1.5">
-                    <CircleDollarSign className="h-3.5 w-3.5 text-teal-500" /> $
-                    {d.consultation_fee} consult
+                    <Banknote className="h-3.5 w-3.5 text-teal-500" /> {d.consultation_fee} ج.م الكشف
                   </span>
                   {next ? (
                     <Badge variant="success" className="text-[10px]">
-                      Next: today {formatTimeSlot(next)}
+                      أقرب موعد: اليوم {formatTimeSlot(next)}
                     </Badge>
                   ) : (
                     <Badge variant="slate" className="text-[10px]">
-                      Next: tomorrow
+                      أقرب موعد: بكرة
                     </Badge>
                   )}
                 </div>
@@ -181,7 +182,7 @@ export function DoctorExplorer() {
                   variant="outline"
                   onClick={() => setBookingDoctor(d)}
                 >
-                  <CalendarPlus /> Book appointment
+                  <CalendarPlus /> احجز موعدك
                 </Button>
               </div>
             );

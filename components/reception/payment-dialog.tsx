@@ -27,10 +27,10 @@ import type { Appointment, PaymentMethod } from "@/lib/types";
 import { formatCurrency, formatTimeSlot } from "@/lib/utils";
 
 const METHODS: Array<{ value: PaymentMethod; label: string }> = [
-  { value: "cash", label: "Cash" },
-  { value: "card", label: "Card" },
-  { value: "insurance", label: "Insurance" },
-  { value: "upi", label: "UPI / Digital wallet" },
+  { value: "cash", label: "نقدي" },
+  { value: "card", label: "بطاقة" },
+  { value: "insurance", label: "تأمين" },
+  { value: "upi", label: "محفظة إلكترونية" },
 ];
 
 export function PaymentDialog({
@@ -58,13 +58,13 @@ export function PaymentDialog({
         payment_status: "paid",
         payment_method: method,
       });
-      toast.success("Payment collected", {
-        description: `${formatCurrency(fee)} recorded via ${method.toUpperCase()} for ${appointment.patient?.full_name}.`,
+      toast.success("تم تحصيل الدفع", {
+        description: `${formatCurrency(fee)} — ${METHODS.find((m) => m.value === method)?.label} — ${appointment.patient?.full_name}.`,
       });
       onOpenChange(false);
     } catch (e) {
-      toast.error("Payment failed", {
-        description: e instanceof Error ? e.message : "Unknown error",
+      toast.error("فشل عملية الدفع", {
+        description: e instanceof Error ? e.message : "خطأ غير معروف",
       });
     } finally {
       setBusy(false);
@@ -76,7 +76,7 @@ export function PaymentDialog({
     setBusy(true);
     try {
       await ds.updateAppointment(appointment.id, { payment_status: "pending" });
-      toast.info("Payment reverted to pending");
+      toast.info("أُرجعت الحالة إلى «معلق»");
       onOpenChange(false);
     } finally {
       setBusy(false);
@@ -88,10 +88,10 @@ export function PaymentDialog({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5 text-teal-600" /> Payment collection
+            <CreditCard className="h-5 w-5 text-teal-600" /> تحصيل الدفع
           </DialogTitle>
           <DialogDescription>
-            Toggle consultation payment and generate a simulated receipt.
+            بدّل حالة كشفية الدفع وأنشئ إيصالًا تجريبيًا للطباعة.
           </DialogDescription>
         </DialogHeader>
 
@@ -107,19 +107,17 @@ export function PaymentDialog({
             <PaymentBadge paid={paid} />
           </div>
           <div className="mt-3 flex items-end justify-between border-t border-dashed pt-3">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Consultation fee
-            </span>
+            <span className="text-xs font-semibold text-slate-400">رسوم الكشف</span>
             <span className="text-2xl font-bold text-slate-900">{formatCurrency(fee)}</span>
           </div>
         </div>
 
         {!paid && (
           <div className="space-y-2">
-            <Label htmlFor="pay-method">Payment method</Label>
+            <Label>طريقة الدفع</Label>
             <Select value={method} onValueChange={(v) => setMethod(v as PaymentMethod)}>
-              <SelectTrigger id="pay-method">
-                <SelectValue placeholder="Select method" />
+              <SelectTrigger>
+                <SelectValue placeholder="اختر الطريقة" />
               </SelectTrigger>
               <SelectContent>
                 {METHODS.map((m) => (
@@ -136,26 +134,26 @@ export function PaymentDialog({
           {paid ? (
             <>
               <Button variant="outline" onClick={() => printReceipt(appointment)}>
-                <Printer /> Reprint receipt
+                <Printer /> إعادة طباعة الإيصال
               </Button>
               <Button variant="outline" disabled={busy} onClick={() => void markPending()}>
-                <RotateCcw /> Mark as pending
+                <RotateCcw /> إرجاع للمعلق
               </Button>
             </>
           ) : (
             <>
               <Button variant="outline" onClick={() => printReceipt(appointment)} disabled>
-                <Printer /> Receipt
+                <Printer /> الإيصال
               </Button>
               <Button onClick={() => void markPaid()} disabled={busy}>
                 <BadgeCheck />
-                {busy ? "Processing…" : `Mark Paid · ${formatCurrency(fee)}`}
+                {busy ? "جارٍ المعالجة…" : `تأكيد الدفع · ${formatCurrency(fee)}`}
               </Button>
             </>
           )}
         </DialogFooter>
         <p className="text-center text-[11px] text-muted-foreground">
-          Receipts can be printed / saved as PDF from the paid state.
+          يمكن طباعة الإيصالات / حفظها PDF بعد تأكيد الدفع.
         </p>
       </DialogContent>
     </Dialog>

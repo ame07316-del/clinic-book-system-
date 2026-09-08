@@ -33,13 +33,13 @@ export function useDemoActions() {
     setSeeding(true);
     try {
       const counts = await ds.seedDemoData();
-      toast.success("Demo data seeded", {
-        description: `${counts.doctors} doctors · ${counts.patients} patients · ${counts.appointments} appointments · ${counts.medical_records} records · ${counts.schedule_blocks} blocks`,
+      toast.success("تم تحميل البيانات التجريبية", {
+        description: `${counts.doctors} أطباء · ${counts.patients} مرضى · ${counts.appointments} مواعيد · ${counts.medical_records} سجلات · ${counts.schedule_blocks} حظر`,
       });
       return counts;
     } catch (e) {
-      toast.error("Seeding failed", {
-        description: e instanceof Error ? e.message : "Unknown error",
+      toast.error("فشل تحميل البيانات", {
+        description: e instanceof Error ? e.message : "خطأ غير معروف",
       });
       return null;
     } finally {
@@ -52,10 +52,10 @@ export function useDemoActions() {
     setResetting(true);
     try {
       await ds.resetAll();
-      toast.success("All demo data cleared");
+      toast.success("تم مسح كل البيانات");
     } catch (e) {
-      toast.error("Reset failed", {
-        description: e instanceof Error ? e.message : "Unknown error",
+      toast.error("فشل المسح", {
+        description: e instanceof Error ? e.message : "خطأ غير معروف",
       });
     } finally {
       setResetting(false);
@@ -75,20 +75,20 @@ export function SettingsDialog({
   const { mode, message, reconnect } = useAppData();
   const { seed, reset, seeding, resetting } = useDemoActions();
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "— not set —";
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "— غير محدد —";
   const keyPreview = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     ? `${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.slice(0, 14)}••••••••`
-    : "— not set —";
+    : "— غير محدد —";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Database className="h-5 w-5 text-teal-600" /> System Settings
+            <Database className="h-5 w-5 text-teal-600" /> إعدادات النظام
           </DialogTitle>
           <DialogDescription>
-            Backend connection, demo data and environment diagnostics.
+            الاتصال بقاعدة البيانات، البيانات التجريبية، وتشخيص بيئة التشغيل.
           </DialogDescription>
         </DialogHeader>
 
@@ -97,30 +97,31 @@ export function SettingsDialog({
             <div className="flex items-center gap-2 text-sm font-semibold">
               {mode === "supabase" ? (
                 <>
-                  <Server className="h-4 w-4 text-emerald-600" /> Connected to Supabase
+                  <Server className="h-4 w-4 text-emerald-600" /> متصل بـ Supabase
                 </>
               ) : mode === "demo" ? (
                 <>
-                  <TriangleAlert className="h-4 w-4 text-amber-600" /> Local demo backend
+                  <TriangleAlert className="h-4 w-4 text-amber-600" /> قاعدة بيانات تجريبية محلية
                 </>
               ) : (
                 <>
-                  <RefreshCw className="h-4 w-4 animate-spin text-slate-400" /> Connecting…
+                  <RefreshCw className="h-4 w-4 animate-spin text-slate-400" /> جارٍ الاتصال…
                 </>
               )}
             </div>
             <Button variant="outline" size="sm" onClick={reconnect}>
-              <RefreshCw /> Reconnect
+              <RefreshCw /> إعادة الاتصال
             </Button>
           </div>
           {message && <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{message}</p>}
           {mode === "demo" && (
             <p className="mt-2 rounded-lg bg-amber-50 p-2.5 text-xs leading-relaxed text-amber-800 ring-1 ring-amber-100">
-              To connect your Supabase project: open the{" "}
-              <span className="font-semibold">SQL Editor</span> in the Supabase dashboard and run{" "}
-              <code className="rounded bg-amber-100/70 px-1 font-mono">supabase/schema.sql</code>{" "}
-              from this repo, enable Realtime for <code className="font-mono">appointments</code>,
-              then hit <span className="font-semibold">Reconnect</span>.
+              لتشغيل مشروعك على Supabase: افتح{" "}
+              <span className="font-semibold">SQL Editor</span> في لوحة تحكم Supabase ونفّذ ملف{" "}
+              <code className="rounded bg-amber-100/70 px-1 font-mono" dir="ltr">supabase/schema.sql</code>{" "}
+              الموجود بالمستودع، وفعّل Realtime لجدول{" "}
+              <code className="font-mono" dir="ltr">appointments</code>، ثم اضغط{" "}
+              <span className="font-semibold">إعادة الاتصال</span>.
             </p>
           )}
         </div>
@@ -128,31 +129,33 @@ export function SettingsDialog({
         <Separator />
 
         <div className="space-y-2 text-sm">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-            Environment
-          </p>
+          <p className="text-xs font-semibold text-slate-400">بيئة التشغيل</p>
           <div className="flex items-center justify-between rounded-lg border bg-card px-3 py-2">
-            <span className="text-xs text-muted-foreground">NEXT_PUBLIC_SUPABASE_URL</span>
-            <code className="max-w-[55%] truncate rounded bg-slate-100 px-2 py-0.5 text-xs">
+            <span className="text-xs text-muted-foreground" dir="ltr">
+              NEXT_PUBLIC_SUPABASE_URL
+            </span>
+            <code className="max-w-[55%] truncate rounded bg-slate-100 px-2 py-0.5 text-xs" dir="ltr">
               {supabaseUrl}
             </code>
           </div>
           <div className="flex items-center justify-between rounded-lg border bg-card px-3 py-2">
-            <span className="text-xs text-muted-foreground">NEXT_PUBLIC_SUPABASE_ANON_KEY</span>
-            <code className="rounded bg-slate-100 px-2 py-0.5 text-xs">{keyPreview}</code>
+            <span className="text-xs text-muted-foreground" dir="ltr">
+              NEXT_PUBLIC_SUPABASE_ANON_KEY
+            </span>
+            <code className="rounded bg-slate-100 px-2 py-0.5 text-xs" dir="ltr">
+              {keyPreview}
+            </code>
           </div>
         </div>
 
         <Separator />
 
         <div className="space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-            Demo data
-          </p>
+          <p className="text-xs font-semibold text-slate-400">البيانات التجريبية</p>
           <div className="flex flex-wrap gap-2">
             <Button onClick={() => void seed()} disabled={seeding || mode === "connecting"}>
               <Sparkles className={seeding ? "animate-pulse" : ""} />
-              {seeding ? "Seeding…" : "Seed Demo Data"}
+              {seeding ? "جارٍ التحميل…" : "تحميل البيانات التجريبية"}
             </Button>
             <Button
               variant="outline"
@@ -160,18 +163,18 @@ export function SettingsDialog({
               disabled={resetting || mode === "connecting"}
               className="text-destructive hover:bg-rose-50 hover:text-destructive"
             >
-              <Trash2 /> {resetting ? "Clearing…" : "Clear All Data"}
+              <Trash2 /> {resetting ? "جارٍ المسح…" : "مسح كل البيانات"}
             </Button>
             <Button variant="ghost" asChild>
               <a href="/supabase/schema.sql" download>
-                <Download /> Download schema.sql
+                <Download /> تنزيل schema.sql
               </a>
             </Button>
           </div>
           <p className="text-xs leading-relaxed text-muted-foreground">
-            Seeding replaces <span className="font-medium">all</span> doctors, patients,
-            appointments and records with a fresh realistic dataset for today&apos;s queue
-            (completed, waiting, in-consultation and scheduled patients included).
+            التحميل يستبدل <span className="font-medium">كل</span> الأطباء والمرضى والمواعيد
+            والسجلات بمجموعة واقعية لطابور اليوم (مرضى تم الكشف عنهم، وفي الانتظار، وداخل
+            الكشفية، ومحجوزين).
           </p>
         </div>
       </DialogContent>

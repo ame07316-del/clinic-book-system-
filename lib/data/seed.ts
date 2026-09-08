@@ -12,8 +12,8 @@ import type {
 import { uid } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
-/*  Realistic demo seed — doctors, patients, today's queue with a      */
-/*  healthy mix of statuses, records and schedule blocks.              */
+/*  البيانات التجريبية — أطباء ومرضى وطابور اليوم بمزيج واقعي          */
+/*  من الحالات وسجلات طبية وحظر مواعيد.                                */
 /* ------------------------------------------------------------------ */
 
 interface DoctorSeed {
@@ -24,31 +24,31 @@ interface DoctorSeed {
 }
 
 const DOCTORS: DoctorSeed[] = [
-  { name: "Dr. Sarah Mitchell", specialty: "Cardiology", fee: 180, phone: "+1 (555) 010-1101" },
-  { name: "Dr. James Okafor", specialty: "Pediatrics", fee: 120, phone: "+1 (555) 010-1102" },
-  { name: "Dr. Priya Sharma", specialty: "Dermatology", fee: 140, phone: "+1 (555) 010-1103" },
-  { name: "Dr. Michael Chen", specialty: "Orthopedics", fee: 160, phone: "+1 (555) 010-1104" },
-  { name: "Dr. Elena Rodriguez", specialty: "Neurology", fee: 200, phone: "+1 (555) 010-1105" },
-  { name: "Dr. David Kim", specialty: "General Medicine", fee: 90, phone: "+1 (555) 010-1106" },
+  { name: "د. سارة عبد الرحمن", specialty: "القلب والأوعية الدموية", fee: 700, phone: "+20 100 111 2201" },
+  { name: "د. أحمد الشريف", specialty: "طب الأطفال", fee: 400, phone: "+20 100 111 2202" },
+  { name: "د. مريم عادل", specialty: "الأمراض الجلدية", fee: 500, phone: "+20 100 111 2203" },
+  { name: "د. محمود خليل", specialty: "جراحة العظام", fee: 550, phone: "+20 100 111 2204" },
+  { name: "د. هبة مصطفى", specialty: "المخ والأعصاب", fee: 800, phone: "+20 100 111 2205" },
+  { name: "د. كريم فؤاد", specialty: "الباطنة العامة", fee: 300, phone: "+20 100 111 2206" },
 ];
 
 const PATIENT_NAMES: Array<[string, string]> = [
-  ["Ava Thompson", "+1 (555) 231-4401"],
-  ["Liam Rodriguez", "+1 (555) 231-4402"],
-  ["Sophia Nguyen", "+1 (555) 231-4403"],
-  ["Noah Patel", "+1 (555) 231-4404"],
-  ["Mia Johansson", "+1 (555) 231-4405"],
-  ["Ethan Brooks", "+1 (555) 231-4406"],
-  ["Isabella Rossi", "+1 (555) 231-4407"],
-  ["Lucas Mendes", "+1 (555) 231-4408"],
-  ["Amara Diallo", "+1 (555) 231-4409"],
-  ["Benjamin Clarke", "+1 (555) 231-4410"],
-  ["Chloe Dubois", "+1 (555) 231-4411"],
-  ["Daniel Kim", "+1 (555) 231-4412"],
-  ["Grace Osei", "+1 (555) 231-4413"],
-  ["Henry Walsh", "+1 (555) 231-4414"],
-  ["Zoe Anderson", "+1 (555) 231-4415"],
-  ["Omar Farouk", "+1 (555) 231-4416"],
+  ["أمنية جمال", "+20 101 234 4401"],
+  ["محمود السيد", "+20 101 234 4402"],
+  ["سلمى فارس", "+20 101 234 4403"],
+  ["يوسف عادل", "+20 101 234 4404"],
+  ["نور الهدى", "+20 101 234 4405"],
+  ["عمر خالد", "+20 101 234 4406"],
+  ["ملك أشرف", "+20 101 234 4407"],
+  ["زياد طارق", "+20 101 234 4408"],
+  ["حبيبة سمير", "+20 101 234 4409"],
+  ["كريم مراد", "+20 101 234 4410"],
+  ["جنى محمود", "+20 101 234 4411"],
+  ["آسر حازم", "+20 101 234 4412"],
+  ["رينيم صلاح", "+20 101 234 4413"],
+  ["مصطفى وجيه", "+20 101 234 4414"],
+  ["سلمى عصام", "+20 101 234 4415"],
+  ["عبد الرحمن شريف", "+20 101 234 4416"],
 ];
 
 function rx(
@@ -90,9 +90,9 @@ export function buildSeedBundle(today: string, tomorrow: string): SeedBundle {
 
   const receptionist: Profile = {
     id: uid(),
-    full_name: "Rachel Green (Reception)",
+    full_name: "ريهام سامي (الاستقبال)",
     role: "receptionist",
-    phone: "+1 (555) 010-1000",
+    phone: "+20 100 111 2000",
     created_at: now,
   };
 
@@ -122,44 +122,44 @@ export function buildSeedBundle(today: string, tomorrow: string): SeedBundle {
   }
 
   const rows: RowSeed[] = [
-    // — Cardiology (Dr. Mitchell) —
-    { doctor: 0, patient: "Ava Thompson", date: today, slot: "09:00", status: "completed", reason: "Hypertension follow-up", payment: "paid", method: "card", diagnosis: "Stage 1 hypertension — well controlled on current therapy. BP 128/82, HR 72.", prescription: [rx("Lisinopril", "10 mg", "Once daily (morning)", "30 days", "Take with a full glass of water."), rx("Atorvastatin", "20 mg", "Once at night", "30 days", "Avoid grapefruit juice.")] },
-    { doctor: 0, patient: "Liam Rodriguez", date: today, slot: "09:30", status: "completed", reason: "Chest discomfort on exertion", payment: "paid", method: "insurance", diagnosis: "Non-cardiac chest pain — musculoskeletal. ECG normal, troponin negative.", prescription: [rx("Ibuprofen", "400 mg", "Twice daily", "5 days", "Take after food.")] },
-    { doctor: 0, patient: "Sophia Nguyen", date: today, slot: "10:00", status: "completed", reason: "Palpitations", payment: "paid", method: "upi", diagnosis: "Sinus tachycardia secondary to anxiety. Holter not indicated at this time.", prescription: [rx("Magnesium glycinate", "200 mg", "Once daily", "60 days")] },
-    { doctor: 0, patient: "Noah Patel", date: today, slot: "10:30", status: "waiting", reason: "Annual cardiac screening", payment: "pending" },
-    { doctor: 0, patient: "Mia Johansson", date: today, slot: "11:00", status: "waiting", reason: "High BP reading at pharmacy", payment: "pending" },
-    { doctor: 0, patient: "Ethan Brooks", date: today, slot: "11:30", status: "scheduled", reason: "Cholesterol review", payment: "pending" },
-    { doctor: 0, patient: "Isabella Rossi", date: today, slot: "14:00", status: "scheduled", reason: "Post-COVID fatigue", payment: "pending" },
-    { doctor: 0, patient: "Lucas Mendes", date: today, slot: "14:30", status: "scheduled", reason: "Family history of heart disease", payment: "pending" },
+    // — القلب والأوعية الدموية (د. سارة) —
+    { doctor: 0, patient: "أمنية جمال", date: today, slot: "09:00", status: "completed", reason: "متابعة ضغط الدم", payment: "paid", method: "card", diagnosis: "ارتفاع ضغط الدم — المرحلة الأولى، تحت السيطرة. القراءة 128/82 والنبض 72.", prescription: [rx("أملوديبين", "5 مجم", "قرص واحد يوميًا (صباحًا)", "30 يوم", "يُشرب بكوب ماء كامل."), rx("أتورواستاتين", "20 مجم", "قرص قبل النوم", "30 يوم", "يُمنع عصير الجريب فروت مع الدواء.")] },
+    { doctor: 0, patient: "محمود السيد", date: today, slot: "09:30", status: "completed", reason: "ألم بالصدر عند المجهود", payment: "paid", method: "insurance", diagnosis: "ألم صدر غير قلبي — سبب عضلي. رسم القلب سليم والإنزيمات سالبة.", prescription: [rx("إيبوبروفين", "400 مجم", "مرتين يوميًا", "5 أيام", "بعد الأكل مباشرة.")] },
+    { doctor: 0, patient: "سلمى فارس", date: today, slot: "10:00", status: "completed", reason: "خفقان بالقلب", payment: "paid", method: "upi", diagnosis: "تسارع جيبي بسبب التوتر — لا حاجة لجهاز هولتر حاليًا.", prescription: [rx("مغنيسيوم", "200 مجم", "مرة واحدة يوميًا", "60 يوم")] },
+    { doctor: 0, patient: "يوسف عادل", date: today, slot: "10:30", status: "waiting", reason: "فحص قلب دوري", payment: "pending" },
+    { doctor: 0, patient: "نور الهدى", date: today, slot: "11:00", status: "waiting", reason: "قراءة ضغط مرتفعة بالصيدلية", payment: "pending" },
+    { doctor: 0, patient: "عمر خالد", date: today, slot: "11:30", status: "scheduled", reason: "متابعة الكوليسترول", payment: "pending" },
+    { doctor: 0, patient: "ملك أشرف", date: today, slot: "14:00", status: "scheduled", reason: "إرهاق بعد التعافي من فيروس كورونا", payment: "pending" },
+    { doctor: 0, patient: "زياد طارق", date: today, slot: "14:30", status: "scheduled", reason: "تاريخ عائلي لأمراض القلب", payment: "pending" },
 
-    // — Pediatrics (Dr. Okafor) —
-    { doctor: 1, patient: "Amara Diallo", date: today, slot: "09:00", status: "completed", reason: "Child wellness visit", payment: "paid", method: "cash", diagnosis: "Healthy 6-year-old. Growth on 60th percentile. Vaccines up to date.", prescription: [rx("Vitamin D3", "600 IU", "Once daily", "90 days", "Chewable, with meals.")] },
-    { doctor: 1, patient: "Benjamin Clarke", date: today, slot: "09:30", status: "in_consultation", reason: "Fever for 2 days", payment: "pending" },
-    { doctor: 1, patient: "Chloe Dubois", date: today, slot: "10:00", status: "waiting", reason: "Persistent cough", payment: "pending" },
-    { doctor: 1, patient: "Daniel Kim", date: today, slot: "10:30", status: "waiting", reason: "School physical form", payment: "paid", method: "card" },
-    { doctor: 1, patient: "Grace Osei", date: today, slot: "14:00", status: "scheduled", reason: "Ear pain", payment: "pending" },
-    { doctor: 1, patient: "Omar Farouk", date: today, slot: "15:00", status: "scheduled", reason: "Rash on arms", payment: "pending" },
+    // — طب الأطفال (د. أحمد) —
+    { doctor: 1, patient: "حبيبة سمير", date: today, slot: "09:00", status: "completed", reason: "زيارة نماء دورية", payment: "paid", method: "cash", diagnosis: "طفلة سليمة — النمو عند المنحنى 60%. التطعيمات مكتملة.", prescription: [rx("فيتامين د3", "600 وحدة", "مرة واحدة يوميًا", "90 يوم", "مضغ مع الوجبات.")] },
+    { doctor: 1, patient: "كريم مراد", date: today, slot: "09:30", status: "in_consultation", reason: "حرارة من يومين", payment: "pending" },
+    { doctor: 1, patient: "جنى محمود", date: today, slot: "10:00", status: "waiting", reason: "كحة مستمرة", payment: "pending" },
+    { doctor: 1, patient: "آسر حازم", date: today, slot: "10:30", status: "waiting", reason: "إفادة كشف طبي للمدرسة", payment: "paid", method: "card" },
+    { doctor: 1, patient: "رينيم صلاح", date: today, slot: "14:00", status: "scheduled", reason: "ألم بالأذن", payment: "pending" },
+    { doctor: 1, patient: "مصطفى وجيه", date: today, slot: "15:00", status: "scheduled", reason: "طفح بالذراعين", payment: "pending" },
 
-    // — Dermatology (Dr. Sharma) —
-    { doctor: 2, patient: "Henry Walsh", date: today, slot: "10:00", status: "completed", reason: "Acne consultation", payment: "paid", method: "card", diagnosis: "Moderate inflammatory acne vulgaris, face. Grade II.", prescription: [rx("Adapalene 0.1% gel", "Pea-sized amount", "Once at night", "8 weeks", "Apply to dry skin, avoid eyes."), rx("Doxycycline", "100 mg", "Once daily", "6 weeks", "Take with plenty of water, stay upright 30 min.")] },
-    { doctor: 2, patient: "Zoe Anderson", date: today, slot: "10:30", status: "waiting", reason: "Eczema flare-up", payment: "pending" },
-    { doctor: 2, patient: "Ava Thompson", date: today, slot: "11:30", status: "scheduled", reason: "Mole check", payment: "pending" },
-    { doctor: 2, patient: "Ethan Brooks", date: today, slot: "15:30", status: "cancelled", reason: "Laser consultation", payment: "pending" },
+    // — الأمراض الجلدية (د. مريم) —
+    { doctor: 2, patient: "سلمى عصام", date: today, slot: "10:00", status: "completed", reason: "استشارة حبوب الوجه", payment: "paid", method: "card", diagnosis: "حبوب الوجه الالتهابية المتوسطة — الدرجة الثانية.", prescription: [rx("ترتينوين 0.1% كريم", "حجم حبة عدس", "مرة واحدة قبل النوم", "8 أسابيع", "على بشرة جافة وتجنب محيط العين."), rx("دوكسيسايكلين", "100 مجم", "مرة واحدة يوميًا", "6 أسابيع", "بماء كثير والجلوس 30 دقيقة بعده.")] },
+    { doctor: 2, patient: "عبد الرحمن شريف", date: today, slot: "10:30", status: "waiting", reason: "تهيج جلدي (إكزيما)", payment: "pending" },
+    { doctor: 2, patient: "أمنية جمال", date: today, slot: "11:30", status: "scheduled", reason: "فحص شامة", payment: "pending" },
+    { doctor: 2, patient: "عمر خالد", date: today, slot: "15:30", status: "cancelled", reason: "استشارة ليزر", payment: "pending" },
 
-    // — Orthopedics (Dr. Chen) —
-    { doctor: 3, patient: "Lucas Mendes", date: today, slot: "09:30", status: "completed", reason: "Ankle sprain", payment: "paid", method: "insurance", diagnosis: "Grade II lateral ankle sprain. No fracture on X-ray. RICE protocol advised.", prescription: [rx("Naproxen", "250 mg", "Twice daily", "7 days", "Take with food."), rx("Physiotherapy", "45 min session", "3× per week", "4 weeks", "Book at front desk.")] },
-    { doctor: 3, patient: "Grace Osei", date: today, slot: "10:30", status: "waiting", reason: "Lower back pain", payment: "pending" },
-    { doctor: 3, patient: "Henry Walsh", date: today, slot: "11:00", status: "scheduled", reason: "Knee pain while running", payment: "pending" },
+    // — جراحة العظام (د. محمود) —
+    { doctor: 3, patient: "زياد طارق", date: today, slot: "09:30", status: "completed", reason: "التواء الكاحل", payment: "paid", method: "insurance", diagnosis: "التواء كاحل خارجي — الدرجة الثانية، لا كسر بالأشعة. برتكول الراحة والتبريد.", prescription: [rx("نابروكسين", "250 مجم", "مرتين يوميًا", "7 أيام", "بعد الأكل."), rx("علاج طبيعي", "جلسة 45 دقيقة", "3 مرات أسبوعيًا", "4 أسابيع", "الحجز من الاستقبال.")] },
+    { doctor: 3, patient: "رينيم صلاح", date: today, slot: "10:30", status: "waiting", reason: "ألم أسفل الظهر", payment: "pending" },
+    { doctor: 3, patient: "مصطفى وجيه", date: today, slot: "11:00", status: "scheduled", reason: "ألم بالركبة أثناء الجري", payment: "pending" },
 
-    // — Neurology (Dr. Rodriguez) —
-    { doctor: 4, patient: "Mia Johansson", date: today, slot: "13:00", status: "scheduled", reason: "Recurrent migraines", payment: "pending" },
-    { doctor: 4, patient: "Daniel Kim", date: today, slot: "14:30", status: "scheduled", reason: "Numbness in left hand", payment: "pending" },
+    // — المخ والأعصاب (د. هبة) —
+    { doctor: 4, patient: "نور الهدى", date: today, slot: "13:00", status: "scheduled", reason: "شقيقة متكررة", payment: "pending" },
+    { doctor: 4, patient: "آسر حازم", date: today, slot: "14:30", status: "scheduled", reason: "تنميل باليد اليسرى", payment: "pending" },
 
-    // — General Medicine (Dr. Kim) —
-    { doctor: 5, patient: "Noah Patel", date: today, slot: "13:30", status: "scheduled", reason: "Fatigue work-up", payment: "pending" },
-    { doctor: 5, patient: "Chloe Dubois", date: tomorrow, slot: "09:00", status: "scheduled", reason: "Blood pressure re-check", payment: "pending" },
-    { doctor: 5, patient: "Benjamin Clarke", date: tomorrow, slot: "09:30", status: "scheduled", reason: "Thyroid results review", payment: "pending" },
-    { doctor: 0, patient: "Sophia Nguyen", date: tomorrow, slot: "10:00", status: "scheduled", reason: "Cardiology follow-up", payment: "pending" },
+    // — الباطنة العامة (د. كريم) —
+    { doctor: 5, patient: "يوسف عادل", date: today, slot: "13:30", status: "scheduled", reason: "تحري سبب الإرهاق", payment: "pending" },
+    { doctor: 5, patient: "جنى محمود", date: tomorrow, slot: "09:00", status: "scheduled", reason: "إعادة قياس ضغط", payment: "pending" },
+    { doctor: 5, patient: "كريم مراد", date: tomorrow, slot: "09:30", status: "scheduled", reason: "مراجعة تحاليل الغدة", payment: "pending" },
+    { doctor: 0, patient: "سلمى فارس", date: tomorrow, slot: "10:00", status: "scheduled", reason: "إعادة فحص قلب", payment: "pending" },
   ];
 
   const appointments: AppointmentRow[] = rows.map((r) => ({
@@ -200,7 +200,7 @@ export function buildSeedBundle(today: string, tomorrow: string): SeedBundle {
       start_time: "13:00",
       end_time: "14:00",
       type: "break" as BlockType,
-      reason: "Lunch break",
+      reason: "استراحة غداء",
       created_at: now,
     },
     {
@@ -210,7 +210,7 @@ export function buildSeedBundle(today: string, tomorrow: string): SeedBundle {
       start_time: "15:00",
       end_time: "16:00",
       type: "emergency" as BlockType,
-      reason: "Reserved — pediatric emergency window",
+      reason: "احتياطي طوارئ الأطفال",
       created_at: now,
     },
     {
@@ -220,7 +220,7 @@ export function buildSeedBundle(today: string, tomorrow: string): SeedBundle {
       start_time: "11:30",
       end_time: "12:30",
       type: "custom" as BlockType,
-      reason: "Surgery round at City Hospital",
+      reason: "جولة مستشفى المدينة",
       created_at: now,
     },
   ];

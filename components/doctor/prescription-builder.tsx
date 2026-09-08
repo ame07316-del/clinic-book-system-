@@ -6,22 +6,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { PrescriptionItem } from "@/lib/types";
 
-const DOSAGE_HINTS = ["1 tablet", "2 tablets", "1 capsule", "5 ml", "10 mg", "1 spray", "Apply thin layer"];
+const DOSAGE_HINTS = ["قرص واحد", "قرصان", "كبسولة واحدة", "5 مل", "10 مجم", "بخة واحدة", "طبقة رقيقة موضعية"];
 const FREQUENCY_HINTS = [
-  "Once daily",
-  "Twice daily",
-  "3× daily",
-  "Every 8 hours",
-  "Every 12 hours",
-  "Before meals",
-  "After meals",
-  "As needed (PRN)",
-  "At bedtime",
+  "مرة واحدة يوميًا",
+  "مرتين يوميًا",
+  "3 مرات يوميًا",
+  "كل 8 ساعات",
+  "كل 12 ساعة",
+  "قبل الأكل",
+  "بعد الأكل",
+  "عند اللزوم",
+  "قبل النوم",
 ];
-const DURATION_HINTS = ["3 days", "5 days", "7 days", "10 days", "2 weeks", "4 weeks", "8 weeks", "3 months", "Ongoing"];
+const DURATION_HINTS = ["3 أيام", "5 أيام", "7 أيام", "10 أيام", "أسبوعين", "4 أسابيع", "8 أسابيع", "3 شهور", "مستمر"];
 
 /* ------------------------------------------------------------------ */
-/*  PrescriptionBuilder — dynamic e-prescription rows stored as JSONB  */
+/*  PrescriptionBuilder — صفوف الوصفة الديناميكية المخزنة JSONB        */
 /* ------------------------------------------------------------------ */
 
 export function PrescriptionBuilder({
@@ -50,8 +50,7 @@ export function PrescriptionBuilder({
         <div className="flex items-center gap-3 rounded-xl border border-dashed bg-teal-50/40 px-4 py-5 text-sm text-teal-800">
           <Pill className="h-5 w-5 shrink-0 text-teal-500" />
           <p>
-            No medications yet. Add the first prescription line — entries are stored as JSONB on
-            the medical record.
+            لا توجد أدوية بعد. أضف أول صنف — يُخزَّن كـ JSONB في السجل الطبي.
           </p>
         </div>
       )}
@@ -62,13 +61,13 @@ export function PrescriptionBuilder({
           className="relative animate-rise rounded-xl border bg-slate-50/60 p-3.5 ring-1 ring-transparent transition-shadow focus-within:shadow-soft focus-within:ring-teal-200"
         >
           <div className="mb-2.5 flex items-center justify-between">
-            <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-teal-700">
-              <Pill className="h-3.5 w-3.5" /> Medication {idx + 1}
+            <span className="flex items-center gap-1.5 text-xs font-bold text-teal-700">
+              <Pill className="h-3.5 w-3.5" /> الدواء {idx + 1}
             </span>
             <Button
               variant="ghost"
               size="icon-sm"
-              aria-label="Remove medication"
+              aria-label="حذف الدواء"
               onClick={() => remove(item.id)}
               className="text-slate-400 hover:bg-rose-50 hover:text-destructive"
             >
@@ -77,51 +76,51 @@ export function PrescriptionBuilder({
           </div>
           <div className="grid gap-2.5 sm:grid-cols-2">
             <div className="space-y-1">
-              <Label className="text-xs text-slate-500">Medicine name *</Label>
+              <Label className="text-xs text-slate-500">اسم الدواء *</Label>
               <Input
                 value={item.medicine}
                 onChange={(e) => update(item.id, { medicine: e.target.value })}
-                placeholder="e.g. Amoxicillin"
+                placeholder="مثال: أوجمنتين"
                 list="medicines"
                 className="h-8 bg-card"
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-slate-500">Dosage</Label>
+              <Label className="text-xs text-slate-500">الجرعة</Label>
               <Input
                 value={item.dosage}
                 onChange={(e) => update(item.id, { dosage: e.target.value })}
-                placeholder="e.g. 500 mg"
+                placeholder="مثال: 500 مجم"
                 list="dosages"
                 className="h-8 bg-card"
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-slate-500">Frequency</Label>
+              <Label className="text-xs text-slate-500">التكرار</Label>
               <Input
                 value={item.frequency}
                 onChange={(e) => update(item.id, { frequency: e.target.value })}
-                placeholder="e.g. Twice daily"
+                placeholder="مثال: مرتين يوميًا"
                 list="frequencies"
                 className="h-8 bg-card"
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-slate-500">Duration</Label>
+              <Label className="text-xs text-slate-500">المدة</Label>
               <Input
                 value={item.duration}
                 onChange={(e) => update(item.id, { duration: e.target.value })}
-                placeholder="e.g. 7 days"
+                placeholder="مثال: 7 أيام"
                 list="durations"
                 className="h-8 bg-card"
               />
             </div>
             <div className="space-y-1 sm:col-span-2">
-              <Label className="text-xs text-slate-500">Instructions (optional)</Label>
+              <Label className="text-xs text-slate-500">تعليمات (اختياري)</Label>
               <Input
                 value={item.instructions ?? ""}
                 onChange={(e) => update(item.id, { instructions: e.target.value })}
-                placeholder="e.g. Take after food with plenty of water"
+                placeholder="مثال: بعد الأكل بماء كثير"
                 className="h-8 bg-card"
               />
             </div>
@@ -129,9 +128,9 @@ export function PrescriptionBuilder({
         </div>
       ))}
 
-      {/* datalists for quick entry */}
+      {/* قوائم اقتراحات للإدخال السريع */}
       <datalist id="medicines">
-        {["Amoxicillin", "Ibuprofen", "Paracetamol", "Lisinopril", "Metformin", "Atorvastatin", "Omeprazole", "Cetirizine", "Salbutamol"].map((m) => (
+        {["أوجمنتين", "بانادول إكسترا", "زيرتك", "كونكور", "جلوكوفاج", "ليبيتور", "نيكسيوم", "فولتارين", "فيتامين د", "فوليك أسيد"].map((m) => (
           <option key={m} value={m} />
         ))}
       </datalist>
@@ -152,7 +151,7 @@ export function PrescriptionBuilder({
       </datalist>
 
       <Button type="button" variant="outline" onClick={addItem} className="w-full border-dashed">
-        <Plus /> Add medication
+        <Plus /> إضافة دواء
       </Button>
     </div>
   );

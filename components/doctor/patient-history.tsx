@@ -7,7 +7,7 @@ import type { Appointment, MedicalRecord } from "@/lib/types";
 import { formatDateShort } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
-/*  PatientHistory — past medical notes & prescriptions of a patient.  */
+/*  PatientHistory — الملاحظات والوصفات السابقة للمريض.                */
 /* ------------------------------------------------------------------ */
 
 export function PatientHistory({
@@ -44,8 +44,8 @@ export function PatientHistory({
     return (
       <EmptyState
         icon={History}
-        title="No past medical history"
-        description="Records saved on completed consultations will appear here for future visits."
+        title="لا يوجد تاريخ طبي سابق"
+        description="السجلات المحفوظة من الكشوفيات المنتهية تظهر هنا في الزيارات القادمة."
       />
     );
   }
@@ -69,11 +69,11 @@ export function PatientHistory({
               </div>
             </div>
             <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500">
-              {record.prescription.length} medication{record.prescription.length === 1 ? "" : "s"}
+              {record.prescription.length} دواء
             </span>
           </div>
           <p className="mt-2.5 text-sm leading-relaxed text-slate-700">
-            <span className="font-semibold text-slate-500">Diagnosis: </span>
+            <span className="font-semibold text-slate-500">التشخيص: </span>
             {record.diagnosis || "—"}
           </p>
           {record.prescription.length > 0 && (

@@ -1,133 +1,135 @@
-# MediCore — Medical Center Booking & Queue Management (Demo)
+# ميدي كور — نظام حجز العيادات وإدارة الطوابير (نسخة تجريبية)
 
-A production-grade **demo** of a full clinic operations platform:
+نظام **تجريبي** متكامل لإدارة شؤون المركز الطبي:
 
-- 🧾 **Patient / Booking Portal** — specialty & doctor finder, interactive date & time slot
-  selector (fully booked / blocked slots grey out live), appointment tracking by phone.
-- 🗂️ **Reception Console** — live patient queue manager (`Scheduled → Waiting → In
-  Consultation → Completed`), dynamic slot creator (breaks / emergency windows / capacity
-  override with auto-cancel), quick walk-in registration, payment collection toggle with
-  printable receipts.
-- 🩺 **Doctor Workspace** — realtime waiting-room feed, interactive consultation workspace
-  with patient history, **e-prescription builder (JSONB)**, one-click **Print / PDF**
-  prescription export, and a **Finish Consultation** button that updates the reception
-  view in realtime.
+- 🧾 **بوابة المريض / الحجز** — باحث تخصصات وأطباء، منتقي تاريخ ووقت تفاعلي (المعادات الممتلئة
+  والمحجوبة تتشطب لحظيًا)، ومتابعة الموعد برقم الهاتف.
+- 🗂️ **كونسول الاستقبال** — مدير طابور المرضى المباشر (`محجوز ← في الانتظار ← داخل الكشفية ←
+  تم الكشف`)، منع المواعيد الديناميكي (استراحات / نوافذ طوارئ / تجاوز سعة مع إلغاء تلقائي)،
+  تسجيل سريع للمرضى الفوريين، وتحصيل الدفع مع إيصالات قابلة للطباعة.
+- 🩺 **غرفة الكشفية** — قائمة انتظار حية للطبيب، مساحة كشفية تفاعلية مع السجل الطبي للمريض،
+  **باني وصفة إلكترونية (JSONB)**، تصدير الوصفة **طباعة/PDF** بضغطة، وزر **إنهاء الكشفية**
+  الذي يحدّث شاشة الاستقبال لحظيًا.
 
-> ⚠️ Demo application: payments/receipts are simulated and RLS is intentionally open.
+> ⚠️ تطبيق تجريبي: المدفوعات والإيصالات محاكاة، وصلاحيات RLS مفتوحة عمدًا.
+> الواجهة بالكامل بالعربية مع دعم RTL (خط Cairo)، والعملة بالجنيه المصري.
 
 ---
 
-## Tech stack
+## التقنيات
 
-| Layer      | Choice                                                        |
-| ---------- | ------------------------------------------------------------- |
-| Framework  | Next.js (App Router) + React 19 + TypeScript                  |
-| Styling    | Tailwind CSS v4 (slate/teal/cyan healthcare SaaS theme)        |
-| UI         | shadcn-style components (Radix primitives), Lucide icons       |
-| Data       | Supabase (`@supabase/supabase-js`) + **Postgres Changes** realtime |
-| Toasts     | sonner                                                         |
+| الطبقة      | الاختيار                                                        |
+| ----------- | --------------------------------------------------------------- |
+| الإطار      | Next.js (App Router) + React 19 + TypeScript                     |
+| التنسيق     | Tailwind CSS v4 (ثيم طبي slate/teal/cyan بدعم RTL)               |
+| الواجهة     | مكونات بأسلوب shadcn (Radix primitives) + أيقونات Lucide         |
+| البيانات    | Supabase (`@supabase/supabase-js`) + Postgres Changes (Realtime) |
+| الإشعارات   | sonner (بدعم RTL)                                                |
 
-## Quick start
+## التشغيل السريع
 
 ```bash
 npm install
-cp .env.example .env.local   # fill in your Supabase URL + publishable key
+cp .env.example .env.local   # املأ رابط Supabase والمفتاح العام
 npm run dev                  # http://localhost:3000
 ```
 
-`.env.local` (already included in this workspace):
+`.env.local` (موجود بالفعل بمساحة العمل):
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://jpxyabjarezndnhrfhok.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_...
 ```
 
-## Connecting your Supabase project
+## ربط مشروع Supabase
 
-1. Open the **SQL Editor** in the Supabase dashboard.
-2. Run **`supabase/schema.sql`** — it creates `profiles`, `doctors`, `appointments`
-   (with `payment_status`/`payment_method`), `medical_records` (JSONB prescriptions) and
-   `schedule_blocks`, adds demo RLS policies, and adds the tables to the
-   `supabase_realtime` publication.
-3. Back in the app, open **⋮ → Settings & connection → Reconnect**.
-4. Click **⋮ → Seed demo data** to populate 6 doctors, 16 patients, today's queue
-   (completed / waiting / in-consultation / scheduled), records and blocks.
+1. افتح **SQL Editor** في لوحة تحكم Supabase.
+2. نفّذ **`supabase/schema.sql`** — ينشئ جداول `profiles` و`doctors` و`appointments`
+   (بحالة الدفع وطرقه) و`medical_records` (وصفات JSONB) و`schedule_blocks`، ويضيف سياسات RLS
+   التجريبية، ويضيف الجداول لنشر `supabase_realtime`.
+3. ارجع للتطبيق: **⋮ ← الإعدادات والاتصال ← إعادة الاتصال**.
+4. اضغط **⋮ ← تحميل بيانات تجريبية** لتعبئة 6 أطباء و16 مريضًا وطابور اليوم
+   (تم الكشف / في الانتظار / داخل الكشفية / محجوز) وسجلات وحظر مواعيد.
 
-### Graceful demo fallback
+### الوضع التجريبي الاحتياطي
 
-On startup the app probes the `doctors` table. If Supabase is unreachable **or the schema
-isn't provisioned yet**, it transparently switches to a **local demo backend**
-(`localStorage`) that mirrors the schema 1:1 and simulates realtime — including
-**cross-tab sync**, so opening Reception in one tab and the Doctor workspace in another
-still demonstrates live queue updates. The header badge shows which backend is active
-(`Live` = connected) and Settings explains how to go live.
+عند التشغيل يجرّب التطبيق الاستعلام عن جدول `doctors`. لو Supabase غير متاح **أو السكيما
+لم تُنشأ بعد**، يتحول شفافية إلى **قاعدة بيانات تجريبية محلية** (`localStorage`) مطابقة
+للسكيما 1:1 مع محاكاة Realtime — بما فيها **المزامنة بين التابات**، ففتح الاستقبال في تاب
+وغرفة الكشفية في تاب آخر يُظهر تحديثات الطابور الحية. شارة الهيدر تُظهر القاعدة النشطة
+(`مباشر` = متصل)، وشاشة الإعدادات تشرح خطوات التشغيل على Supabase.
 
-## Realtime
+## الـ Realtime
 
-`lib/data/supabase-adapter.ts` subscribes to Postgres Changes on `appointments`
-(plus `doctors`, `profiles`, `medical_records`, `schedule_blocks`) on a single channel.
-Events flow into a tiny internal bus (`lib/data/bus.ts`); React hooks
-(`useAppointments`, etc.) refetch automatically — no page refreshes anywhere.
+`lib/data/supabase-adapter.ts` يشترك في Postgres Changes على جدول `appointments`
+(كذلك `doctors` و`profiles` و`medical_records` و`schedule_blocks`) على قناة واحدة.
+الأحداث تتدفق إلى ناقل داخلي صغير (`lib/data/bus.ts`)، وخطافات React
+(`useAppointments` إلخ) تعيد الجلب تلقائيًا — من غير أي تحديث صفحات.
 
-## Database schema
+## سكيما قاعدة البيانات
 
-Matches the reference schema, extended for the demo features:
+مطابقة للسكيما المرجعية مع امتدادات لميزات العرض:
 
 ```
 profiles        (id, full_name, role[doctor|receptionist|patient], phone, created_at)
-doctors         (id, user_id → profiles, specialty, consultation_fee, created_at)
-appointments    (id, patient_id → profiles, doctor_id → doctors, appointment_date,
+doctors         (id, user_id ← profiles, specialty, consultation_fee, created_at)
+appointments    (id, patient_id ← profiles, doctor_id ← doctors, appointment_date,
                  time_slot, status[scheduled|waiting|in_consultation|completed|cancelled],
                  reason, payment_status[pending|paid], payment_method, paid_at, created_at)
 medical_records (id, appointment_id ⚡unique, diagnosis, prescription jsonb,
                  created_at, updated_at)
-schedule_blocks (id, doctor_id → doctors, block_date, start_time, end_time,
+schedule_blocks (id, doctor_id ← doctors, block_date, start_time, end_time,
                  type[break|emergency|custom], reason, created_at)
 ```
 
-`prescription` JSONB shape:
+شكل الـ `prescription` (JSONB):
 
 ```json
-[{ "id": "…", "medicine": "Amoxicillin", "dosage": "500 mg",
-   "frequency": "Twice daily", "duration": "7 days",
-   "instructions": "Take after food" }]
+[{ "id": "…", "medicine": "أوجمنتين", "dosage": "1 جم",
+   "frequency": "مرتين يوميًا", "duration": "7 أيام",
+   "instructions": "بعد الأكل" }]
 ```
 
-## Demo data & seeders
+## البيانات التجريبية والـ Seeders
 
-- **Seed Demo Data** lives in the header **⋮** menu and in **Settings**. It clears the
-  demo tables and inserts a realistic dataset dated relative to *today* (so the queue is
-  always "live"): completed morning visits with medical records, patients waiting right
-  now, an in-consultation visit, upcoming scheduled slots, a lunch break block and an
-  emergency window.
-- **Clear All Data** wipes the same tables.
+- زر **تحميل البيانات التجريبية** في قائمة الهيدر **⋮** وفي **الإعدادات**. يمسح الجداول
+  التجريبية ويُدخل مجموعة واقعية بتواريخ نسبية لـ *اليوم* (فالطابور دايمًا «حي»): كشوفيات
+  صباحية منتهية بسجلاتها، مرضى في الانتظار الآن، كشفية جارية، معادات قادمة، استراحة غداء
+  ونافذة طوارئ.
+- **مسح كل البيانات** يمسح نفس الجداول.
 
-## Project layout
+## هيكل المشروع
 
 ```
 app/
-  page.tsx              # patient portal (finder + booking + tracking)
-  reception/page.tsx    # reception console
-  doctor/page.tsx       # doctor picker
-  doctor/[id]/page.tsx  # consultation workspace
+  page.tsx              # بوابة المريض (الباحث + الحجز + المتابعة)
+  reception/page.tsx    # كونسول الاستقبال
+  doctor/page.tsx       # قائمة الأطباء
+  doctor/[id]/page.tsx  # غرفة الكشفية
 components/
-  ui/                   # shadcn-style primitives (button, dialog, select, …)
-  shared/               # header, logo, badges, stat cards, settings dialog
-  reception/            # queue table, quick register, slot blocker, payments
-  doctor/               # waiting feed, consultation panel, prescription builder
-  portal/               # hero, doctor explorer, booking dialog, my appointments
+  ui/                   # مكونات أساسية بأسلوب shadcn (button, dialog, select, …)
+  shared/               # الهيدر، اللوجو، الشارات، كروت الإحصائيات، الإعدادات
+  reception/            # جدول الطابور، التسجيل السريع، حظر المواعيد، الدفع
+  doctor/               # قائمة الانتظار، مساحة الكشفية، باني الوصفة
+  portal/               # الهيرو، باحث الأطباء، حوار الحجز، مواعيدي
 lib/
-  data/                 # DataSource contract, Supabase adapter, local demo store, bus
-  slots.ts              # slot engine (capacity, blocks, past-time rules)
-  print.ts              # prescription / receipt print+PDF exporters
-supabase/schema.sql     # full DB schema + RLS + realtime publication
+  data/                 # عقد DataSource، محول Supabase، المخزن التجريبي، الناقل
+  slots.ts              # محرك المعادات (السعة، الحظر، قواعد الوقت الفائت)
+  print.ts              # مصدّرات طباعة/PDF للوصفة والإيصال
+supabase/schema.sql     # السكيما الكاملة + RLS + نشر Realtime
 ```
 
-## Production hardening checklist
+## الاختبارات
 
-- Replace the open demo RLS policies with role-scoped policies tied to `auth.uid()`.
-- Add Supabase Auth (magic-link) and map `profiles.id = auth.id`.
-- Move mutations behind Row Level Security-checked server actions / edge functions.
-- Add uniqueness constraints to prevent double-booking races (e.g.
-  `unique (doctor_id, appointment_date, time_slot) where status <> 'cancelled'`).
-- Rate-limit the publishable key and enable leak protection in the dashboard.
+```bash
+npm run test:smoke   # 28 اختبار دخان على محرك المعادات والسيد والمخزن المحلي
+```
+
+## قائمة تحصين الإنتاج
+
+- استبدل سياسات RLS المفتوحة بسياسات مربوطة بالأدوار عبر `auth.uid()`.
+- أضف Supabase Auth (رابط سحري) واربط `profiles.id = auth.id`.
+- انقل عمليات الكتابة إلى Server Actions / Edge Functions مع فحوص RLS.
+- أضف قيود تفراد لمنع الحجز المزدوج مثل
+  `unique (doctor_id, appointment_date, time_slot) where status <> 'cancelled'`.
+- فعّل حماية تسريب المفاتيح وحد المعدل للمفتاح العام من لوحة التحكم.

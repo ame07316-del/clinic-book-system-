@@ -28,9 +28,7 @@ export function StatCard({
     >
       <div className="flex items-start justify-between">
         <div className="min-w-0">
-          <p className="truncate text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-            {label}
-          </p>
+          <p className="truncate text-[11px] font-semibold text-slate-400">{label}</p>
           {loading ? (
             <Skeleton className="mt-2 h-8 w-16" />
           ) : (
@@ -42,7 +40,7 @@ export function StatCard({
           <Icon className="h-5 w-5" />
         </div>
       </div>
-      <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-gradient-to-br from-teal-100/50 to-cyan-100/20 blur-2xl" />
+      <div className="pointer-events-none absolute -left-8 -top-8 h-24 w-24 rounded-full bg-gradient-to-br from-teal-100/50 to-cyan-100/20 blur-2xl" />
     </div>
   );
 }

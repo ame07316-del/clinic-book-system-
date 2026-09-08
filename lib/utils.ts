@@ -14,35 +14,37 @@ export function uid(): string {
     .slice(2)}-${Math.random().toString(16).slice(2)}`;
 }
 
+const AR = "ar-EG-u-nu-latn"; // عربي بأرقام لاتينية
+
+/** 700 -> "700 ج.م" */
 export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
+  const n = new Intl.NumberFormat(AR, {
     maximumFractionDigits: amount % 1 === 0 ? 0 : 2,
   }).format(amount);
+  return `${n} ج.م`;
 }
 
-/** "14:30" -> "2:30 PM" */
+/** "14:30" -> "2:30 م" */
 export function formatTimeSlot(slot: string): string {
   const [h, m] = slot.split(":").map(Number);
-  const suffix = h >= 12 ? "PM" : "AM";
+  const suffix = h >= 12 ? "م" : "ص";
   const hour = h % 12 === 0 ? 12 : h % 12;
   return `${hour}:${String(m).padStart(2, "0")} ${suffix}`;
 }
 
-/** "2026-09-08" -> "Mon, Sep 8" */
+/** "2026-09-08" -> "الاثنين، 8 سبتمبر" */
 export function formatDateShort(dateStr: string): string {
   const d = parseDate(dateStr);
-  return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+  return d.toLocaleDateString(AR, { weekday: "short", day: "numeric", month: "short" });
 }
 
-/** "2026-09-08" -> "Monday, September 8, 2026" */
+/** "2026-09-08" -> "الاثنين، 8 سبتمبر 2026" */
 export function formatDateLong(dateStr: string): string {
   const d = parseDate(dateStr);
-  return d.toLocaleDateString("en-US", {
+  return d.toLocaleDateString(AR, {
     weekday: "long",
-    month: "long",
     day: "numeric",
+    month: "long",
     year: "numeric",
   });
 }
@@ -80,9 +82,18 @@ export function isPastSlot(dateStr: string, slot: string, bufferMinutes = 0): bo
   return slotMinutes <= nowMinutes + bufferMinutes;
 }
 
+/** حروف الاسم الأولى للصورة الرمزية — عربي: أول حرفين من الاسم الأول */
 export function initials(name: string): string {
-  return name
-    .replace(/^(Dr\.?|Mr\.?|Mrs\.?|Ms\.?)\s+/i, "")
+  const clean = name.replace(/^(?:Dr\.?|Mr\.?|Mrs\.?|Ms\.?|د\.?)\s*/i, "").trim();
+  if (!clean) return "؟";
+  if (/[\u0600-\u06FF]/.test(clean)) {
+    return clean
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((w) => w[0]!)
+      .join("");
+  }
+  return clean
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2)
@@ -111,14 +122,14 @@ export function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-/** Relative "x min ago" style label from an ISO timestamp. */
+/** "قبل 5 د" — label زمني نسبي من ISO timestamp */
 export function timeAgo(iso: string | null | undefined): string {
   if (!iso) return "—";
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1) return "الآن";
+  if (mins < 60) return `قبل ${mins} د`;
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
+  if (hrs < 24) return `قبل ${hrs} س`;
+  return `قبل ${Math.floor(hrs / 24)} ي`;
 }

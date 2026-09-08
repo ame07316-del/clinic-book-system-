@@ -27,10 +27,10 @@ import type { BlockType } from "@/lib/types";
 import { generateDaySlots } from "@/lib/slots";
 import { addDays, formatTimeSlot, todayStr } from "@/lib/utils";
 
-const BLOCK_TYPES: Array<{ value: BlockType; label: string; hint: string }> = [
-  { value: "break", label: "Doctor break", hint: "Lunch, rounds, admin time" },
-  { value: "emergency", label: "Emergency window", hint: "Reserve capacity for urgent cases" },
-  { value: "custom", label: "Custom block", hint: "Any other unavailability" },
+const BLOCK_TYPES: Array<{ value: BlockType; label: string }> = [
+  { value: "break", label: "استراحة طبيب" },
+  { value: "emergency", label: "نافذة طوارئ" },
+  { value: "custom", label: "حظر مخصص" },
 ];
 
 export function SlotBlockerDialog({
@@ -58,11 +58,11 @@ export function SlotBlockerDialog({
 
   const submit = async () => {
     if (!ds || !doctorId) {
-      toast.error("Select a doctor to block time for");
+      toast.error("اختر الطبيب لحظر وقته");
       return;
     }
     if (endTime <= startTime) {
-      toast.error("End time must be after start time");
+      toast.error("وقت النهاية لازم يكون بعد وقت البداية");
       return;
     }
     setBusy(true);
@@ -76,15 +76,15 @@ export function SlotBlockerDialog({
         reason: reason || null,
         cancelAffected,
       });
-      toast.success("Slots blocked", {
-        description: `${formatTimeSlot(block.start_time)}–${formatTimeSlot(block.end_time)} on ${block.block_date}${cancelAffected ? " — overlapping appointments were cancelled" : ""}.`,
+      toast.success("تم حظر المواعيد", {
+        description: `من ${formatTimeSlot(block.start_time)} إلى ${formatTimeSlot(block.end_time)} يوم ${block.block_date}${cancelAffected ? " — تم إلغاء المواعيد المتداخلة" : ""}.`,
       });
       setReason("");
       setCancelAffected(false);
       onOpenChange(false);
     } catch (e) {
-      toast.error("Could not block slots", {
-        description: e instanceof Error ? e.message : "Unknown error",
+      toast.error("تعذّر حظر المواعيد", {
+        description: e instanceof Error ? e.message : "خطأ غير معروف",
       });
     } finally {
       setBusy(false);
@@ -96,20 +96,20 @@ export function SlotBlockerDialog({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <CalendarOff className="h-5 w-5 text-teal-600" /> Dynamic slot creator
+            <CalendarOff className="h-5 w-5 text-teal-600" /> منع المواعيد الديناميكي
           </DialogTitle>
           <DialogDescription>
-            Block out break times, emergency windows or override capacity. Blocked slots grey out
-            everywhere instantly — including the patient portal.
+            احجز استراحات الأطباء أو نوافذ الطوارئ أو تجاوز السعة. المعادات المحجوبة تتشطب في كل
+            الشاشات فورًا — بما فيها بوابة المريض.
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5 sm:col-span-2">
-            <Label>Doctor *</Label>
+            <Label>الطبيب *</Label>
             <Select value={doctorId} onValueChange={setDoctorId}>
               <SelectTrigger>
-                <SelectValue placeholder="Select doctor" />
+                <SelectValue placeholder="اختر الطبيب" />
               </SelectTrigger>
               <SelectContent>
                 {(doctors ?? []).map((d) => (
@@ -122,7 +122,7 @@ export function SlotBlockerDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="blk-date">Date</Label>
+            <Label htmlFor="blk-date">التاريخ</Label>
             <Input
               id="blk-date"
               type="date"
@@ -133,7 +133,7 @@ export function SlotBlockerDialog({
             />
           </div>
           <div className="space-y-1.5">
-            <Label>Block type</Label>
+            <Label>نوع الحظر</Label>
             <Select value={type} onValueChange={(v) => setType(v as BlockType)}>
               <SelectTrigger>
                 <SelectValue />
@@ -149,7 +149,7 @@ export function SlotBlockerDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="blk-start">From</Label>
+            <Label htmlFor="blk-start">من</Label>
             <Select value={startTime} onValueChange={setStartTime}>
               <SelectTrigger id="blk-start">
                 <Clock className="h-3.5 w-3.5 text-slate-400" />
@@ -165,7 +165,7 @@ export function SlotBlockerDialog({
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="blk-end">To</Label>
+            <Label htmlFor="blk-end">إلى</Label>
             <Select value={endTime} onValueChange={setEndTime}>
               <SelectTrigger id="blk-end">
                 <Clock className="h-3.5 w-3.5 text-slate-400" />
@@ -182,15 +182,15 @@ export function SlotBlockerDialog({
           </div>
 
           <div className="space-y-1.5 sm:col-span-2">
-            <Label htmlFor="blk-reason">Reason / note</Label>
+            <Label htmlFor="blk-reason">السبب / ملاحظة</Label>
             <Input
               id="blk-reason"
               placeholder={
                 type === "break"
-                  ? "e.g. Lunch break"
+                  ? "مثال: استراحة غداء"
                   : type === "emergency"
-                    ? "e.g. Reserved for ER overflow"
-                    : "e.g. Conference at City Hospital"
+                    ? "مثال: احتياطي لطوارئ الاستقبال"
+                    : "مثال: مؤتمر بمستشفى المدينة"
               }
               value={reason}
               onChange={(e) => setReason(e.target.value)}
@@ -202,10 +202,8 @@ export function SlotBlockerDialog({
           <div className="flex items-start gap-2.5">
             <ShieldAlert className="mt-0.5 h-4 w-4 text-rose-500" />
             <div>
-              <p className="text-sm font-medium text-rose-800">Override capacity</p>
-              <p className="text-xs text-rose-600">
-                Cancel appointments that overlap this window.
-              </p>
+              <p className="text-sm font-medium text-rose-800">تجاوز السعة</p>
+              <p className="text-xs text-rose-600">إلغاء المواعيد المتداخلة مع هذه الفترة.</p>
             </div>
           </div>
           <Switch checked={cancelAffected} onCheckedChange={setCancelAffected} />
@@ -213,10 +211,10 @@ export function SlotBlockerDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            إلغاء
           </Button>
           <Button onClick={() => void submit()} disabled={busy || !doctorId}>
-            {busy ? "Blocking…" : "Block slots"}
+            {busy ? "جارٍ الحظر…" : "حظر المواعيد"}
           </Button>
         </DialogFooter>
       </DialogContent>

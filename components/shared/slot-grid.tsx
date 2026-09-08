@@ -7,8 +7,8 @@ import { useAppointments, useScheduleBlocks } from "@/lib/data";
 import { cn, formatTimeSlot } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
-/*  SlotGrid — interactive day grid. Fully booked / blocked / past     */
-/*  slots are greyed out dynamically from live data.                   */
+/*  SlotGrid — شبكة المعادات اليومية التفاعلية. المعادات الممتلئة       */
+/*  والمحجوبة والفائتة تتشطب تلقائيًا من البيانات الحية.                */
 /* ------------------------------------------------------------------ */
 
 export function SlotGrid({
@@ -25,7 +25,7 @@ export function SlotGrid({
   selected: string | null;
   onSelect: (slot: string | null) => void;
   capacity?: number;
-  /** reception can override the past-time rule */
+  /** الاستقبال يمكنه تجاوز قاعدة الوقت الفائت */
   includePast?: boolean;
   className?: string;
 }) {
@@ -75,12 +75,12 @@ export function SlotGrid({
               onClick={() => onSelect(isSelected ? null : s.slot)}
               title={
                 s.blocked
-                  ? `Blocked — ${s.blockReason}`
+                  ? `محجوب — ${s.blockReason}`
                   : s.past && !includePast
-                    ? "Time has passed"
+                    ? "الوقت فائت"
                     : !s.available
-                      ? "Fully booked"
-                      : `${s.booked}/${s.capacity} booked — available`
+                      ? "ممتلئ بالكامل"
+                      : `${s.booked}/${s.capacity} محجوز — متاح`
               }
               className={cn(
                 "relative flex h-10 items-center justify-center rounded-lg border text-[13px] font-medium transition-all",
@@ -93,7 +93,7 @@ export function SlotGrid({
             >
               {formatTimeSlot(s.slot)}
               {s.blocked && (
-                <Ban className="absolute -right-1 -top-1 h-3.5 w-3.5 rounded-full bg-rose-100 p-0.5 text-rose-500" />
+                <Ban className="absolute -left-1 -top-1 h-3.5 w-3.5 rounded-full bg-rose-100 p-0.5 text-rose-500" />
               )}
             </button>
           );
@@ -102,15 +102,15 @@ export function SlotGrid({
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
         <span className="inline-flex items-center gap-1">
           <span className="h-2.5 w-2.5 rounded-sm border border-teal-500 bg-teal-50" />
-          {summary.available} available
+          {summary.available} متاح
         </span>
         <span className="inline-flex items-center gap-1">
           <span className="h-2.5 w-2.5 rounded-sm bg-slate-200" />
-          {summary.booked} booked · {summary.past} past
+          {summary.booked} ممتلئ · {summary.past} فائت
         </span>
         <span className="inline-flex items-center gap-1">
           <Ban className="h-3 w-3 text-rose-400" />
-          {summary.blocked} blocked
+          {summary.blocked} محجوب
         </span>
       </div>
     </div>
@@ -145,14 +145,14 @@ export function DateStrip({
           >
             <span
               className={cn(
-                "text-[10px] font-semibold uppercase tracking-wide",
+                "text-[10px] font-semibold",
                 isSel ? "text-teal-100" : "text-slate-400",
               )}
             >
-              {i === 0 ? "Today" : day.toLocaleDateString("en-US", { weekday: "short" })}
+              {i === 0 ? "اليوم" : day.toLocaleDateString("ar-EG-u-nu-latn", { weekday: "short" })}
             </span>
             <span className={cn("mt-0.5 text-lg font-bold", isSel ? "text-white" : "text-slate-700")}>
-              {day.getDate()}
+              {day.toLocaleDateString("ar-EG-u-nu-latn", { day: "numeric" })}
             </span>
             <span
               className={cn(
@@ -160,7 +160,7 @@ export function DateStrip({
                 isSel ? "text-teal-100" : "text-slate-400",
               )}
             >
-              {day.toLocaleDateString("en-US", { month: "short" })}
+              {day.toLocaleDateString("ar-EG-u-nu-latn", { month: "short" })}
             </span>
           </button>
         );
@@ -168,4 +168,3 @@ export function DateStrip({
     </div>
   );
 }
-

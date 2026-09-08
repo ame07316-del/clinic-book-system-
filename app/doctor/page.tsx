@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { DoctorPicker } from "@/components/doctor/doctor-picker";
 
 export const metadata: Metadata = {
-  title: "Doctor Dashboard",
-  description: "Pick a doctor profile to open the consultation workspace.",
+  title: "لوحة الطبيب",
+  description: "اختر ملف طبيب لفتح مساحة الكشفية.",
 };
 
 export default function DoctorIndexPage() {

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ArrowLeft, Stethoscope } from "lucide-react";
+import { ArrowRight, Stethoscope } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -11,7 +11,7 @@ import { SiteHeader } from "@/components/shared/site-header";
 import { WaitingFeed } from "@/components/doctor/waiting-feed";
 import { ConsultationPanel } from "@/components/doctor/consultation-panel";
 import { useAppData, useAppointments, useDoctors } from "@/lib/data";
-import { initials, todayStr } from "@/lib/utils";
+import { avatarHue, formatCurrency, initials, todayStr } from "@/lib/utils";
 
 export function DoctorWorkspace({ doctorId }: { doctorId: string }) {
   const { mode } = useAppData();
@@ -22,9 +22,9 @@ export function DoctorWorkspace({ doctorId }: { doctorId: string }) {
 
   const doctor = doctors?.find((d) => d.id === doctorId) ?? null;
 
-  // Selection is derived from live data (no effect needed):
-  // - the doctor's explicit pick wins while it still exists,
-  // - otherwise auto-select the in-consultation patient, then the first waiting.
+  // الاختيار مشتق من البيانات الحية (من غير أي useEffect):
+  // - اختيار الطبيب الصريح له الأولوية ما دام موجودًا،
+  // - وإلا نختار تلقائيًا مريض الكشفية الحالي ثم أول مريض انتظار.
   const autoId = useMemo(() => {
     if (!appointments) return null;
     return (
@@ -41,9 +41,6 @@ export function DoctorWorkspace({ doctorId }: { doctorId: string }) {
     () => appointments?.find((a) => a.id === selectedId) ?? null,
     [appointments, selectedId],
   );
-
-  // If the selected appointment's status flips to completed elsewhere, keep it
-  // visible (doctor may still write notes) — no forced deselection.
 
   if (doctorsLoading) {
     return (
@@ -67,12 +64,12 @@ export function DoctorWorkspace({ doctorId }: { doctorId: string }) {
         <main className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
           <EmptyState
             icon={Stethoscope}
-            title="Doctor not found"
-            description="This doctor profile doesn't exist in the current backend. Seed demo data from the header menu, then pick a doctor from the list."
+            title="الطبيب غير موجود"
+            description="ملف الطبيب ده غير موجود في قاعدة البيانات الحالية. حمّل البيانات التجريبية من قائمة الهيدر ثم اختر طبيبًا من القائمة."
             action={
               <Button asChild>
                 <Link href="/doctor">
-                  <ArrowLeft /> Back to doctor list
+                  <ArrowRight /> رجوع لقائمة الأطباء
                 </Link>
               </Button>
             }
@@ -82,21 +79,24 @@ export function DoctorWorkspace({ doctorId }: { doctorId: string }) {
     );
   }
 
-  const name = doctor.profile?.full_name ?? "Doctor";
+  const name = doctor.profile?.full_name ?? "طبيب";
 
   return (
     <div className="min-h-screen">
       <SiteHeader />
       <main className="mx-auto max-w-7xl space-y-5 px-4 py-6 sm:px-6">
-        {/* doctor identity bar */}
+        {/* شريط هوية الطبيب */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" asChild aria-label="Back to doctors">
+            <Button variant="ghost" size="icon" asChild aria-label="رجوع للأطباء">
               <Link href="/doctor">
-                <ArrowLeft />
+                <ArrowRight />
               </Link>
             </Button>
-            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-600 text-sm font-bold text-white shadow-lift">
+            <span
+              className="flex h-12 w-12 items-center justify-center rounded-2xl text-sm font-bold text-white shadow-lift"
+              style={{ background: avatarHue(name) }}
+            >
               {initials(name)}
             </span>
             <div>
@@ -105,8 +105,8 @@ export function DoctorWorkspace({ doctorId }: { doctorId: string }) {
                 <LiveIndicator mode={mode} />
               </div>
               <p className="text-sm text-muted-foreground">
-                {doctor.specialty} · consultation fee ${doctor.consultation_fee} ·{" "}
-                <span className="font-medium text-teal-700">today&apos;s clinic</span>
+                {doctor.specialty} · رسوم الكشف {formatCurrency(doctor.consultation_fee)} ·{" "}
+                <span className="font-medium text-teal-700">عيادة اليوم</span>
               </p>
             </div>
           </div>
@@ -122,7 +122,7 @@ export function DoctorWorkspace({ doctorId }: { doctorId: string }) {
           <ConsultationPanel
             selected={selected}
             onFinished={() => {
-              /* keep panel open so doctor can print the saved prescription */
+              /* نُبقي اللوحة مفتوحة ليطبع الطبيب الوصفة المحفوظة */
             }}
           />
         </div>

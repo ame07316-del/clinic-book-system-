@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { DoctorWorkspace } from "@/components/doctor/doctor-workspace";
 
 export const metadata: Metadata = {
-  title: "Consultation Workspace",
-  description: "Realtime waiting room feed and e-prescription builder.",
+  title: "غرفة الكشفية",
+  description: "قائمة انتظار حية ووصفة إلكترونية متكاملة.",
 };
 
 export default async function DoctorDetailPage({

@@ -10,11 +10,9 @@ export function Logo({ className, compact = false }: { className?: string; compa
       {!compact && (
         <div className="leading-tight">
           <div className="text-[15px] font-bold tracking-tight text-slate-900">
-            Medi<span className="text-teal-600">Core</span>
+            ميدي<span className="text-teal-600">كور</span>
           </div>
-          <div className="text-[10px] font-medium uppercase tracking-[0.14em] text-slate-400">
-            Medical Center
-          </div>
+          <div className="text-[10px] font-medium text-slate-400">مركز طبي متكامل</div>
         </div>
       )}
     </div>

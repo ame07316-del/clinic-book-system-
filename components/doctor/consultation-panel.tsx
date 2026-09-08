@@ -26,12 +26,12 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { useAppData, useMedicalRecords, useAppointments } from "@/lib/data";
 import { printPrescription } from "@/lib/print";
 import type { Appointment, MedicalRecord, PrescriptionItem } from "@/lib/types";
-import { formatCurrency, formatDateLong, formatTimeSlot, initials } from "@/lib/utils";
+import { avatarHue, formatCurrency, formatDateLong, formatTimeSlot, initials } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
-/*  ConsultationPanel — the doctor's interactive workspace:            */
-/*  notes/history, e-prescription builder (JSONB), print/PDF export    */
-/*  and the one-click Finish Consultation (queue → completed).         */
+/*  ConsultationPanel — مساحة الكشفية التفاعلية للطبيب:                */
+/*  ملاحظات وتاريخ، وصفة إلكترونية (JSONB)، تصدير طباعة/PDF،           */
+/*  وزر إنهاء الكشفية بضغطة واحدة (تحديث الاستقبال لحظيًا).            */
 /* ------------------------------------------------------------------ */
 
 export function ConsultationPanel({
@@ -58,8 +58,8 @@ export function ConsultationPanel({
     [allRecords, selected?.id],
   );
 
-  // Sync the editor when the appointment or its saved record changes.
-  // (React's documented "adjust state during render" pattern — no effect.)
+  // مزامنة المحرر عند تغيّر الموعد أو سجله المحفوظ
+  // (نمط "اضبط الحالة أثناء الرسم" الموثق في React — من غير useEffect).
   const recordKey = selected ? `${selected.id}:${currentRecord?.updated_at ?? "none"}` : null;
   if (recordKey && editorKey !== recordKey) {
     setEditorKey(recordKey);
@@ -72,8 +72,8 @@ export function ConsultationPanel({
       <div className="flex h-full min-h-[420px] items-center justify-center rounded-xl border bg-card p-8 shadow-soft">
         <EmptyState
           icon={Stethoscope}
-          title="Consultation workspace"
-          description="Select a patient from the waiting room feed to open their chart, build an e-prescription and finish the visit."
+          title="مساحة الكشفية"
+          description="اختر مريضًا من قائمة الانتظار لفتح ملفه وكتابة الوصفة الإلكترونية وإنهاء الزيارة."
           className="border-0 bg-transparent"
         />
       </div>
@@ -87,8 +87,8 @@ export function ConsultationPanel({
 
   const validate = (): boolean => {
     if (items.some((i) => !i.medicine.trim())) {
-      toast.error("Every medication needs a name", {
-        description: "Fill in the medicine name or remove the empty row.",
+      toast.error("كل دواء لازم يكون له اسم", {
+        description: "اكتب اسم الدواء أو احذف الصف الفاضي.",
       });
       return false;
     }
@@ -104,12 +104,12 @@ export function ConsultationPanel({
         diagnosis: diagnosis.trim(),
         prescription: items.filter((i) => i.medicine.trim()),
       });
-      toast.success("Prescription saved", {
-        description: `${items.filter((i) => i.medicine.trim()).length} medication(s) stored as JSONB on the medical record.`,
+      toast.success("تم حفظ الوصفة", {
+        description: `${items.filter((i) => i.medicine.trim()).length} دواء — مخزنة JSONB في السجل الطبي.`,
       });
       return record;
     } catch (e) {
-      toast.error("Save failed", { description: e instanceof Error ? e.message : "Unknown error" });
+      toast.error("فشل الحفظ", { description: e instanceof Error ? e.message : "خطأ غير معروف" });
       return null;
     } finally {
       setSaving(false);
@@ -120,12 +120,12 @@ export function ConsultationPanel({
     if (!ds) return;
     try {
       await ds.updateAppointment(selected.id, { status: "in_consultation" });
-      toast.success("Patient moved to consultation", {
-        description: "Reception's live queue has been updated in realtime.",
+      toast.success("المريض دخل الكشفية", {
+        description: "تم تحديث شاشة الاستقبال لحظيًا.",
       });
     } catch (e) {
-      toast.error("Could not start consultation", {
-        description: e instanceof Error ? e.message : "Unknown error",
+      toast.error("تعذّر بدء الكشفية", {
+        description: e instanceof Error ? e.message : "خطأ غير معروف",
       });
     }
   };
@@ -137,16 +137,16 @@ export function ConsultationPanel({
       const hasContent = diagnosis.trim() || items.some((i) => i.medicine.trim());
       if (hasContent && (!currentRecord || dirty)) {
         const saved = await saveRecord();
-        if (!saved) return; // saveRecord already surfaced the error toast
+        if (!saved) return; // saveRecord أظهر بالفعل رسالة الخطأ
       }
       await ds.updateAppointment(selected.id, { status: "completed" });
-      toast.success("Consultation completed", {
-        description: `${patient?.full_name} marked as completed — reception view updated live.`,
+      toast.success("تم إنهاء الكشفية", {
+        description: `${patient?.full_name} — الحالة «تم الكشف» وشاشة الاستقبال تحدثت لحظيًا.`,
       });
       onFinished?.();
     } catch (e) {
-      toast.error("Could not finish consultation", {
-        description: e instanceof Error ? e.message : "Unknown error",
+      toast.error("تعذّر إنهاء الكشفية", {
+        description: e instanceof Error ? e.message : "خطأ غير معروف",
       });
     } finally {
       setFinishing(false);
@@ -165,11 +165,14 @@ export function ConsultationPanel({
 
   return (
     <div className="flex h-full flex-col animate-rise rounded-xl border bg-card shadow-soft">
-      {/* patient header */}
+      {/* ترويسة المريض */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-5">
         <div className="flex items-center gap-3">
-          <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-600 text-sm font-bold text-white shadow-lift">
-            {initials(patient?.full_name ?? "?")}
+          <span
+            className="flex h-12 w-12 items-center justify-center rounded-2xl text-sm font-bold text-white shadow-lift"
+            style={{ background: avatarHue(patient?.full_name ?? "؟") }}
+          >
+            {initials(patient?.full_name ?? "؟")}
           </span>
           <div>
             <div className="flex items-center gap-2">
@@ -187,18 +190,18 @@ export function ConsultationPanel({
         <div className="flex flex-wrap items-center gap-2">
           {selected.status === "waiting" && (
             <Button onClick={() => void startConsultation()}>
-              <Play /> Start consultation
+              <Play /> بدء الكشفية
             </Button>
           )}
           {selected.status === "in_consultation" && (
             <Button variant="success" onClick={() => void finishConsultation()} disabled={finishing}>
               {finishing ? <Loader2 className="animate-spin" /> : <CheckCircle2 />}
-              {finishing ? "Finishing…" : "Finish consultation"}
+              {finishing ? "جارٍ الإنهاء…" : "إنهاء الكشفية"}
             </Button>
           )}
           {(selected.status === "completed" || selected.status === "in_consultation") && (
             <Button variant="outline" onClick={print}>
-              <FileDown /> Print / PDF
+              <FileDown /> طباعة / PDF
             </Button>
           )}
         </div>
@@ -206,7 +209,7 @@ export function ConsultationPanel({
 
       {selected.reason && (
         <div className="border-b border-slate-100 bg-slate-50/60 px-5 py-2.5 text-sm text-slate-600">
-          <span className="font-semibold text-slate-500">Chief complaint: </span>
+          <span className="font-semibold text-slate-500">الشكوى الأساسية: </span>
           {selected.reason}
         </div>
       )}
@@ -214,25 +217,25 @@ export function ConsultationPanel({
       <Tabs defaultValue="consult" className="flex flex-1 flex-col p-5">
         <TabsList className="self-start">
           <TabsTrigger value="consult">
-            <ClipboardList /> Consultation
+            <ClipboardList /> الكشفية
           </TabsTrigger>
           <TabsTrigger value="history">
-            <HeartPulse /> History & notes
+            <HeartPulse /> السجل والملاحظات
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="consult" className="flex-1 space-y-5">
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <Label htmlFor="diagnosis">Diagnosis & clinical notes</Label>
+              <Label htmlFor="diagnosis">التشخيص والملاحظات الإكلينيكية</Label>
               {currentRecord && !dirty && (
                 <Badge variant="teal" className="text-[10px]">
-                  saved {currentRecord.updated_at ? new Date(currentRecord.updated_at).toLocaleTimeString() : ""}
+                  محفوظ {currentRecord.updated_at ? new Date(currentRecord.updated_at).toLocaleTimeString("ar-EG-u-nu-latn") : ""}
                 </Badge>
               )}
               {dirty && (
                 <Badge variant="warning" className="text-[10px]">
-                  unsaved changes
+                  تغييرات غير محفوظة
                 </Badge>
               )}
             </div>
@@ -240,28 +243,31 @@ export function ConsultationPanel({
               id="diagnosis"
               value={diagnosis}
               onChange={(e) => setDiagnosis(e.target.value)}
-              placeholder="e.g. Acute bacterial sinusitis. Amoxicillin course advised, review in 7 days…"
+              placeholder="مثال: التهاب جيوب أنفية بكتيري حاد — أُعطيت دورة مضاد حيوي وإعادة بعد 7 أيام…"
               className="min-h-[90px]"
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-sm">E-Prescription</Label>
+            <Label className="text-sm">الوصفة الإلكترونية</Label>
             <PrescriptionBuilder items={items} onChange={setItems} />
           </div>
 
           <div className="sticky bottom-0 -mx-5 flex flex-wrap items-center justify-between gap-2 border-t bg-card/95 px-5 py-3 backdrop-blur">
             <p className="text-xs text-muted-foreground">
-              Saved as <code className="rounded bg-slate-100 px-1">medical_records.prescription</code>{" "}
-              (JSONB) — exportable to PDF.
+              تُحفظ في{" "}
+              <code className="rounded bg-slate-100 px-1 font-mono" dir="ltr">
+                medical_records.prescription
+              </code>{" "}
+              (JSONB) — قابلة للتصدير PDF.
             </p>
             <div className="flex gap-2">
               <Button variant="outline" onClick={print} disabled={!diagnosis.trim() && items.every((i) => !i.medicine.trim())}>
-                <Printer /> Print / Export PDF
+                <Printer /> طباعة / تصدير PDF
               </Button>
               <Button onClick={() => void saveRecord()} disabled={saving}>
                 {saving ? <Loader2 className="animate-spin" /> : <Save />}
-                {saving ? "Saving…" : "Save prescription"}
+                {saving ? "جارٍ الحفظ…" : "حفظ الوصفة"}
               </Button>
             </div>
           </div>
@@ -277,14 +283,14 @@ export function ConsultationPanel({
         </TabsContent>
       </Tabs>
 
-      {/* consultation fee chip */}
+      {/* رسوم الكشف */}
       <div className="border-t border-slate-100 px-5 py-2.5 text-xs text-muted-foreground">
-        Consultation fee:{" "}
+        رسوم الكشف:{" "}
         <span className="font-semibold text-slate-700">
           {formatCurrency(selected.doctor?.consultation_fee ?? 0)}
         </span>{" "}
-        · Payment handled at reception.
-        {recordsLoading && <Skeleton className="ml-2 inline-block h-3 w-16 align-middle" />}
+        · الدفع عند الاستقبال.
+        {recordsLoading && <Skeleton className="ms-2 inline-block h-3 w-16 align-middle" />}
       </div>
     </div>
   );

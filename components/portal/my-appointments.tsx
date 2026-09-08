@@ -10,10 +10,10 @@ import { LiveIndicator } from "@/components/shared/live-indicator";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { useAppData, useAppointments } from "@/lib/data";
 import type { Appointment } from "@/lib/types";
-import { formatDateShort, formatTimeSlot, initials, todayStr } from "@/lib/utils";
+import { avatarHue, formatDateShort, formatTimeSlot, initials, todayStr } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
-/*  MyAppointments — patients track their live queue status by phone.  */
+/*  MyAppointments — المريض يتابع حالة الطابور برقم هاتفه.             */
 /* ------------------------------------------------------------------ */
 
 export function MyAppointments() {
@@ -40,12 +40,12 @@ export function MyAppointments() {
     if (!ds) return;
     try {
       await ds.updateAppointment(a.id, { status: "cancelled" });
-      toast.success("Appointment cancelled", {
-        description: `${formatDateShort(a.appointment_date)} ${formatTimeSlot(a.time_slot)} — the slot is free again.`,
+      toast.success("تم إلغاء الموعد", {
+        description: `${formatDateShort(a.appointment_date)} ${formatTimeSlot(a.time_slot)} — المعاد متاح للحجز من جديد.`,
       });
     } catch (e) {
-      toast.error("Cancellation failed", {
-        description: e instanceof Error ? e.message : "Unknown error",
+      toast.error("فشل الإلغاء", {
+        description: e instanceof Error ? e.message : "خطأ غير معروف",
       });
     }
   };
@@ -56,10 +56,10 @@ export function MyAppointments() {
         <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-              My appointments
+              مواعيدي
             </h2>
             <p className="mt-1.5 text-muted-foreground">
-              Enter the phone number you booked with to track your live queue status.
+              أدخل رقم الهاتف الذي حجزت به لمتابعة حالة موعدك لحظيًا.
             </p>
           </div>
           <LiveIndicator mode={ds ? ds.mode : "connecting"} />
@@ -67,50 +67,51 @@ export function MyAppointments() {
 
         <div className="flex max-w-md gap-2">
           <div className="relative flex-1">
-            <PhoneCall className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <PhoneCall className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <Input
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && setLookup(phone.trim() || null)}
-              placeholder="+1 (555) 231-4401"
-              className="pl-9"
+              placeholder="+20 101 234 4401"
+              className="ps-9"
             />
           </div>
           <Button onClick={() => setLookup(phone.trim() || null)}>
-            <Search /> Track
+            <Search /> متابعة
           </Button>
         </div>
 
         {lookup && (
           <div className="mt-6 grid gap-4 lg:grid-cols-2">
             <AppointmentGroup
-              title="Upcoming & active"
+              title="القادمة والنشطة"
               appointments={upcoming}
-              emptyText="No active appointments for this number."
+              emptyText="لا توجد مواعيد نشطة بهذا الرقم."
               cancellable
               onCancel={cancel}
             />
             <AppointmentGroup
-              title="Past & cancelled"
+              title="السابقة والملغاة"
               appointments={past}
-              emptyText="No history yet."
+              emptyText="لا يوجد سجل بعد."
             />
           </div>
         )}
         {!lookup && (
           <p className="mt-6 rounded-xl border border-dashed bg-slate-50/70 px-4 py-3 text-sm text-muted-foreground">
-            Tip: seed demo data (header ⋮ menu) and try tracking{" "}
+            نصيحة: حمّل البيانات التجريبية (قائمة ⋮) ثم جرّب متابعة{" "}
             <button
               type="button"
               className="font-mono text-teal-700 underline decoration-dotted"
+              dir="ltr"
               onClick={() => {
-                setPhone("+1 (555) 231-4401");
-                setLookup("+1 (555) 231-4401");
+                setPhone("+20 101 234 4401");
+                setLookup("+20 101 234 4401");
               }}
             >
-              +1 (555) 231-4401
+              +20 101 234 4401
             </button>{" "}
-            — Ava Thompson has appointments today.
+            — أمنية جمال لديها مواعيد اليوم.
           </p>
         )}
       </div>
@@ -147,8 +148,11 @@ function AppointmentGroup({
               key={a.id}
               className="flex items-center gap-3 rounded-xl border bg-card px-3.5 py-3 shadow-xs"
             >
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xs font-bold text-slate-600">
-                {initials(a.doctor?.profile?.full_name ?? "?")}
+              <span
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xs font-bold text-white"
+                style={{ background: avatarHue(a.doctor?.profile?.full_name ?? "؟") }}
+              >
+                {initials(a.doctor?.profile?.full_name ?? "؟")}
               </span>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-slate-800">
@@ -165,7 +169,7 @@ function AppointmentGroup({
                 <Button
                   variant="ghost"
                   size="icon-sm"
-                  aria-label="Cancel appointment"
+                  aria-label="إلغاء الموعد"
                   onClick={() => onCancel?.(a)}
                 >
                   <X className="text-slate-400 hover:text-destructive" />
