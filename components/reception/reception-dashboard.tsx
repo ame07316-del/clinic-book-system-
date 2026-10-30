@@ -33,9 +33,10 @@ import { QueueTable } from "@/components/reception/queue-table";
 import { QuickRegisterDialog } from "@/components/reception/quick-register-dialog";
 import { SlotBlockerDialog } from "@/components/reception/slot-blocker-dialog";
 import { PaymentDialog } from "@/components/reception/payment-dialog";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { SiteHeader } from "@/components/shared/site-header";
 import { useAppData, useAppointments, useScheduleBlocks } from "@/lib/data";
-import type { Appointment } from "@/lib/types";
+import type { Appointment, ScheduleBlock } from "@/lib/types";
 import { formatCurrency, formatTimeSlot, todayStr } from "@/lib/utils";
 
 const BLOCK_STYLE: Record<string, { label: string; className: string }> = {
@@ -51,6 +52,8 @@ export function ReceptionDashboard() {
   const [quickOpen, setQuickOpen] = useState(false);
   const [blockerOpen, setBlockerOpen] = useState(false);
   const [paymentFor, setPaymentFor] = useState<Appointment | null>(null);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [blockToDelete, setBlockToDelete] = useState<ScheduleBlock | null>(null);
 
   const { data: allAppointments, loading } = useAppointments({ date: today });
   const { data: blocks, loading: loadingBlocks } = useScheduleBlocks({ date: today });
@@ -242,9 +245,8 @@ export function ReceptionDashboard() {
                           size="icon-sm"
                           aria-label="إزالة الحظر"
                           onClick={() => {
-                            void ds
-                              ?.deleteScheduleBlock(b.id)
-                              .then(() => toast.success("تم إزالة الحظر — المعادات متاحة من جديد"));
+                            setBlockToDelete(b);
+                            setConfirmDeleteOpen(true);
                           }}
                         >
                           <Trash2 className="text-slate-400 hover:text-destructive" />
@@ -291,6 +293,33 @@ export function ReceptionDashboard() {
         defaultDoctorId={doctorFilter !== "all" ? doctorFilter : null}
       />
       <PaymentDialog appointment={paymentFor} open={Boolean(paymentFor)} onOpenChange={(v) => !v && setPaymentFor(null)} />
+
+      {/* تأكيد حذف حظر المواعيد */}
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        onOpenChange={setConfirmDeleteOpen}
+        title="إزالة حظر المواعيد"
+        description={
+          blockToDelete
+            ? `هل أنت متأكد من إزالة حظر "${blockToDelete.reason ?? "غير محدد"}" للطبيب ${doctorName(blockToDelete.doctor_id)}؟`
+            : "هل أنت متأكد؟"
+        }
+        confirmLabel="نعم، أزل الحظر"
+        cancelLabel="إلغاء"
+        destructive
+        onConfirm={() => {
+          if (!ds || !blockToDelete) return;
+          void ds
+            .deleteScheduleBlock(blockToDelete.id)
+            .then(() => toast.success("تم إزالة الحظر — المعادات متاحة من جديد"))
+            .catch((e) =>
+              toast.error("فشل إزالة الحظر", {
+                description: e instanceof Error ? e.message : "خطأ غير معروف",
+              }),
+            );
+          setBlockToDelete(null);
+        }}
+      />
     </div>
   );
 }

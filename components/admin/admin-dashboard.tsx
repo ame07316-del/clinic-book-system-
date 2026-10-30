@@ -292,6 +292,6 @@ function OverviewTab({
       </div>
 
       <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
-    </div>
+      </div>
   );
 }

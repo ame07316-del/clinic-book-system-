@@ -22,6 +22,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { useAppData } from "@/lib/data";
 import type { SeedCounts } from "@/lib/types";
+import { isAdminUnlocked, setAdminPin } from "@/lib/security";
 
 export function useDemoActions() {
   const { ds, reconnect } = useAppData();
@@ -49,6 +50,20 @@ export function useDemoActions() {
 
   const reset = async (): Promise<void> => {
     if (!ds) return;
+    // تتطلب رقم سري قبل المسح (التجربة: 1234)
+    if (!isAdminUnlocked()) {
+      const pin = window.confirm("هذا الإجراء يمسح جميع البيانات.\nرقم السري للتجربة: 1234\n\nأدخل الرقم للمتابعة:")
+        ? window.prompt("أدخل رقم السري:", "")
+        : null;
+      if (pin !== "1234") {
+        toast.error("رقم سري غير صحيح أو تم الإلغاء");
+        return;
+      }
+      setAdminPin("1234");
+    }
+    if (!window.confirm("تأكيد مسح كل البيانات؟ هذا الإجراء لا يمكن التراجع عنه.")) {
+      return;
+    }
     setResetting(true);
     try {
       await ds.resetAll();
@@ -179,5 +194,6 @@ export function SettingsDialog({
         </div>
       </DialogContent>
     </Dialog>
+
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   BadgeCheck,
@@ -11,7 +11,12 @@ import {
   Stethoscope,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -22,15 +27,24 @@ import type { Appointment, Doctor } from "@/lib/types";
 import {
   addDays,
   avatarHue,
+  cn,
   formatCurrency,
   formatDateLong,
   formatTimeSlot,
   initials,
   todayStr,
 } from "@/lib/utils";
+import {
+  formatEgPhone,
+  isValidEgPhone,
+  normalizePhone,
+  sanitizeInput,
+  validateForm,
+} from "@/lib/security";
 
 /* ------------------------------------------------------------------ */
 /*  BookingDialog — منتقي التاريخ والوقت التفاعلي للمريض.              */
+/*  تحسينات: التحقق من المدخلات، تنسيق الهاتف تلقائياً، تقييد المعدل   */
 /* ------------------------------------------------------------------ */
 
 export function BookingDialog({
@@ -50,9 +64,19 @@ export function BookingDialog({
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [confirmed, setConfirmed] = useState<Appointment | null>(null);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const meta = doctor ? specialtyMeta(doctor.specialty) : null;
   const Icon = meta?.icon ?? Stethoscope;
+
+  // تقييد المعدل: يمنع النقر المتكرر على زر الحجز خلال ثانيتين
+  const lastBookCall = useRef(0);
+  const canBook = useCallback(() => {
+    const now = Date.now();
+    if (now - lastBookCall.current < 2000) return false;
+    lastBookCall.current = now;
+    return true;
+  }, []);
 
   const reset = () => {
     setDate(todayStr());
@@ -62,6 +86,7 @@ export function BookingDialog({
     setReason("");
     setBusy(false);
     setConfirmed(null);
+    setFormErrors({});
   };
 
   const handleClose = (open: boolean) => {
@@ -73,34 +98,51 @@ export function BookingDialog({
 
   const confirm = async () => {
     if (!ds || !doctor) return;
-    if (!fullName.trim()) {
-      toast.error("من فضلك اكتب اسمك بالكامل");
+
+    // التحقق من صحة المدخلات
+    const validation = validateForm(
+      { fullName, phone },
+      {
+        fullName: {
+          required: true,
+          minLength: 3,
+          message: "من فضلك اكتب اسمك بالكامل (3 أحرف على الأقل)",
+        },
+        phone: {
+          required: true,
+          pattern: isValidEgPhone,
+          message: "من فضلك اكتب رقم هاتف مصري صحيح (مثل 01xxxxxxxxx)",
+        },
+      },
+    );
+    setFormErrors(validation.errors);
+    if (!validation.valid) return;
+
+    // تقييد المعدل
+    if (!canBook()) {
+      toast.error("من فضلك انتظر لحظة قبل المحاولة مرة أخرى");
       return;
     }
-    if (!phone.trim()) {
-      toast.error("من فضلك اكتب رقم الهاتف", {
-        description: "هتستخدمه لمتابعة موعدك في الأسفل.",
-      });
-      return;
-    }
-    if (!slot) {
-      toast.error("اختر معادًا أولًا");
-      return;
-    }
+
+    const cleanName = sanitizeInput(fullName.trim());
+    const cleanPhone = normalizePhone(phone);
+    const cleanReason = reason ? sanitizeInput(reason.trim()) : null;
+    const cleanSlot = slot!; // تم التحقق من وجوده أعلاه
+
     setBusy(true);
     try {
-      const patient = await ds.createPatient({ full_name: fullName, phone });
+      const patient = await ds.createPatient({ full_name: cleanName, phone: cleanPhone ?? undefined });
       const appt = await ds.createAppointment({
         patient_id: patient.id,
         doctor_id: doctor.id,
         appointment_date: date,
-        time_slot: slot,
+        time_slot: cleanSlot,
         status: "scheduled",
-        reason: reason || null,
+        reason: cleanReason,
       });
       setConfirmed(appt);
       toast.success("تم تأكيد الموعد", {
-        description: `${formatDateLong(date)} الساعة ${formatTimeSlot(slot)} مع ${doctor.profile?.full_name}.`,
+        description: `${formatDateLong(date)} الساعة ${formatTimeSlot(cleanSlot)} مع ${doctor.profile?.full_name}.`,
       });
     } catch (e) {
       toast.error("فشل الحجز", {
@@ -133,7 +175,10 @@ export function BookingDialog({
                 label="الطبيب"
                 value={`${doctor.profile?.full_name} · ${doctor.specialty}`}
               />
-              <Row label="الموعد" value={`${formatDateLong(confirmed.appointment_date)} · ${formatTimeSlot(confirmed.time_slot)}`} />
+              <Row
+                label="الموعد"
+                value={`${formatDateLong(confirmed.appointment_date)} · ${formatTimeSlot(confirmed.time_slot)}`}
+              />
               <Row label="الحالة" value="محجوز — احضر قبل المعاد بـ 10 دقائق" />
               <Row label="الرسوم (بالعيادة)" value={formatCurrency(doctor.consultation_fee)} />
             </div>
@@ -153,7 +198,9 @@ export function BookingDialog({
                   {initials(doctor.profile?.full_name ?? "؟")}
                 </span>
                 <span>
-                  <span className="block text-base leading-relaxed">{doctor.profile?.full_name}</span>
+                  <span className="block text-base leading-relaxed">
+                    {doctor.profile?.full_name}
+                  </span>
                   <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                     <Icon className="h-3.5 w-3.5" /> {doctor.specialty} ·{" "}
                     {formatCurrency(doctor.consultation_fee)}
@@ -183,16 +230,39 @@ export function BookingDialog({
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="مثال: هدى إبراهيم"
+                  className={cn(
+                    "border-red-500/50",
+                    formErrors.fullName && "border-red-500 ring-1 ring-red-500",
+                  )}
                 />
+                {formErrors.fullName && (
+                  <p className="text-[11px] text-red-600">{formErrors.fullName}</p>
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="bk-phone">رقم الهاتف *</Label>
                 <Input
                   id="bk-phone"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    setPhone(raw);
+                    if (raw.replace(/\D/g, "").length >= 4) {
+                      setPhone(formatEgPhone(raw));
+                    }
+                  }}
                   placeholder="+20 1xx xxx xxxx"
+                  className={cn(
+                    "border-red-500/50",
+                    formErrors.phone && "border-red-500 ring-1 ring-red-500",
+                  )}
                 />
+                {formErrors.phone && (
+                  <p className="text-[11px] text-red-600">{formErrors.phone}</p>
+                )}
+                <p className="text-[10px] text-muted-foreground">
+                  مثال: 01xxxxxxxxx أو +201xxxxxxxxx
+                </p>
               </div>
               <div className="space-y-1.5 sm:col-span-2">
                 <Label htmlFor="bk-reason">سبب الزيارة (اختياري)</Label>
